@@ -21,3 +21,4 @@ dbt/logs/
 # misc
 .DS_Store
 EOF
+dbt/.user.yml
