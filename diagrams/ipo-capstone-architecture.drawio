@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net" modified="2026-01-15T11:30:00.000Z" agent="GPT" version="24.7.8" type="device">
+  <diagram id="ipo-arch" name="IPO Capstone Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="t1" value="IPO Performance Tracker — Data Engineering Capstone (Architecture)" style="text;html=1;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1100" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Lanes / containers -->
+        <mxCell id="lane1" value="External Data Sources" style="swimlane;html=1;rounded=1;horizontal=0;startSize=28;fillColor=#ffffff;strokeColor=#d0d0d0;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="360" height="740" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lane2" value="Ingestion &amp; Orchestration" style="swimlane;html=1;rounded=1;horizontal=0;startSize=28;fillColor=#ffffff;strokeColor=#d0d0d0;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="420" y="80" width="420" height="740" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lane3" value="Storage &amp; Modeling" style="swimlane;html=1;rounded=1;horizontal=0;startSize=28;fillColor=#ffffff;strokeColor=#d0d0d0;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="860" y="80" width="360" height="740" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lane4" value="Serving &amp; Visualization" style="swimlane;html=1;rounded=1;horizontal=0;startSize=28;fillColor=#ffffff;strokeColor=#d0d0d0;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="80" width="320" height="740" as="geometry"/>
+        </mxCell>
+
+        <!-- Source boxes -->
+        <mxCell id="s1" value="Finnhub IPO Calendar&#xa;• New IPOs / dates / exchange&#xa;• Basic IPO metadata" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#888888;fillColor=#f7f7f7;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="70" y="150" width="300" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s2" value="Alpha Vantage&#xa;Daily Adjusted Prices&#xa;• OHLCV + adjusted close" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#888888;fillColor=#f7f7f7;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="70" y="270" width="300" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s3" value="Symbol Resolver&#xa;(Alpha Vantage Search)&#xa;• Ticker normalization&#xa;• Exchange mapping" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#888888;fillColor=#f7f7f7;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="70" y="390" width="300" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion -->
+        <mxCell id="i1" value="Python Ingestion Jobs&#xa;• ingest_finnhub_ipos&#xa;• ingest_company_profiles&#xa;• resolve_and_upsert&#xa;• ingest_alpha_prices_for_symbol" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#4f81bd;fillColor=#eef5ff;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="170" width="360" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="i2" value="Dockerized Runtime&#xa;• reproducible env&#xa;• local dev + CI-ready" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#4f81bd;fillColor=#eef5ff;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="320" width="360" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="i3" value="Airflow Orchestration&#xa;• schedule daily/weekly DAGs&#xa;• retries + logging&#xa;• backfill window (e.g., last 100 days)" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#4f81bd;fillColor=#eef5ff;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="450" y="420" width="360" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- Storage & modeling -->
+        <mxCell id="db1" value="PostgreSQL&#xa;Raw / Staging&#xa;• raw.* tables store API payloads&#xa;• staging views clean types" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;strokeColor=#6d6d6d;fillColor=#f3f3f3;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="900" y="190" width="280" height="120" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db2" value="dbt Transformations&#xa;• int_* (joins, enrichment)&#xa;• marts: ipo_performance, cohorts&#xa;• data tests + docs" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#6aa84f;fillColor=#f2fff0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="900" y="350" width="280" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db3" value="Analytics / Mart Schema&#xa;• daily returns&#xa;• 7/30/90 day performance&#xa;• sector / exchange slices" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;strokeColor=#6d6d6d;fillColor=#f3f3f3;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="900" y="500" width="280" height="120" as="geometry"/>
+        </mxCell>
+
+        <!-- Serving -->
+        <mxCell id="v1" value="Streamlit Dashboard&#xa;• IPO cohort view&#xa;• individual IPO drilldown&#xa;• data quality + gaps report" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#c27ba0;fillColor=#fff0f7;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="220" width="260" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="v2" value="(Optional) Exports&#xa;• CSV snapshots&#xa;• chart images for reports" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#c27ba0;fillColor=#fff0f7;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1270" y="360" width="260" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows -->
+        <mxCell id="e1" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="s1" target="i1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="s2" target="i1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="s3" target="i1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e4" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="i1" target="i2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="i2" target="i3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="i3" target="db1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="db1" target="db2">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="db2" target="db3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="endArrow=block;html=1;strokeColor=#666666;" edge="1" parent="1" source="db3" target="v1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Tiny logos (image nodes) -->
+        <!-- NOTE: These use jsDelivr Simple Icons URLs. If a logo doesn't render due to network policy, replace with a local image via draw.io. -->
+        <mxCell id="logo_py" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/python.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="460" y="182" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="logo_docker" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/docker.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="460" y="332" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="logo_airflow" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/apacheairflow.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="460" y="432" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="logo_pg" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/postgresql.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="910" y="202" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="logo_dbt" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/dbt.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="910" y="362" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="logo_streamlit" value="" style="shape=image;image=https://cdn.jsdelivr.net/npm/simple-icons@11.15.0/icons/streamlit.svg;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="232" width="22" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- Footer note -->
+        <mxCell id="note1" value="Tip: If images don’t load (network restrictions), download SVGs and replace via: Right click icon → Edit Data → image=... or simply drag-drop local SVGs onto the canvas." style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="835" width="1500" height="30" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
