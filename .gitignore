@@ -1,0 +1,23 @@
+cat > .gitignore << 'EOF'
+# secrets
+.env
+*.pem
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.venv*/
+*.egg-info/
+dist/
+build/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# misc
+.DS_Store
+EOF

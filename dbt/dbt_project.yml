@@ -1,0 +1,21 @@
+name: ipo_intel
+version: "1.0.0"
+config-version: 2
+
+profile: ipo_intel
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  ipo_intel:
+    +materialized: view
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +schema: analytics
+      +materialized: table
+vars:
+  ipo_recent_days: 180
+  ipo_price_window_days: 100
