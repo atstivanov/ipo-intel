@@ -25,66 +25,69 @@ def _max_loaded_price_date(conn, symbol: str) -> Optional[date]:
 
 def _download_yahoo_daily(symbol: str, date_from: date, date_to: date) -> pd.DataFrame:
     """
-    Uses yfinance to download daily prices.
-    Note: yfinance end-date is effectively exclusive, so we add +1 day.
+    Download daily OHLCV from Yahoo via yfinance.
+
+    Uses Ticker.history(), which is more reliable than yf.download()
+    for one-symbol-at-a-time ingestion.
     """
-    # yfinance expects strings or datetimes; we pass ISO dates
+    ticker = yf.Ticker(symbol)
+
+    # yfinance history end is effectively exclusive, so add +1 day
     start = date_from.isoformat()
     end = (date_to + timedelta(days=1)).isoformat()
 
-    df = yf.download(
-        tickers=symbol,
+    df = ticker.history(
         start=start,
         end=end,
         interval="1d",
         auto_adjust=False,
-        progress=False,
-        threads=False,
-        group_by="column",
+        actions=False,
     )
 
-    # Expected columns: Open, High, Low, Close, Adj Close, Volume (index = Datetime)
     if df is None or df.empty:
         return pd.DataFrame()
 
-    # Sometimes returned columns are multiindex if tickers list used. Normalize.
-    if isinstance(df.columns, pd.MultiIndex):
-        # pick the first level that matches typical OHLCV columns
-        df = df.droplevel(0, axis=1)
-
-    return df
+    return df.copy()
 
 
 def _normalize_yfinance_rows(symbol: str, df: pd.DataFrame, date_from: date, date_to: date) -> list[dict]:
     rows: list[dict] = []
 
-    # Ensure index is datetime-like
+    if df is None or df.empty:
+        return rows
+
+    # Ensure DatetimeIndex
     if not isinstance(df.index, pd.DatetimeIndex):
         try:
             df.index = pd.to_datetime(df.index)
         except Exception:
             return []
 
-    # standardize column names
-    col_map = {c.lower(): c for c in df.columns}
-    open_col = col_map.get("open")
-    high_col = col_map.get("high")
-    low_col = col_map.get("low")
-    close_col = col_map.get("close")
-    volume_col = col_map.get("volume")
+    # Standardize to simple column names
+    df = df.rename(columns={c: str(c).strip().lower() for c in df.columns})
+
+    open_col = "open" if "open" in df.columns else None
+    high_col = "high" if "high" in df.columns else None
+    low_col = "low" if "low" in df.columns else None
+    close_col = "close" if "close" in df.columns else None
+    volume_col = "volume" if "volume" in df.columns else None
+
+    # If we don't even have close/open/high/low, something is wrong
+    if not any([open_col, high_col, low_col, close_col]):
+        return []
 
     for ts, r in df.iterrows():
         d = ts.date()
+
         if d < date_from or d > date_to:
             continue
 
-        o = r[open_col] if open_col in r else None
-        h = r[high_col] if high_col in r else None
-        l = r[low_col] if low_col in r else None
-        c = r[close_col] if close_col in r else None
-        v = r[volume_col] if volume_col in r else None
+        o = r[open_col] if open_col else None
+        h = r[high_col] if high_col else None
+        l = r[low_col] if low_col else None
+        c = r[close_col] if close_col else None
+        v = r[volume_col] if volume_col else None
 
-        # skip fully empty row
         if pd.isna(o) and pd.isna(h) and pd.isna(l) and pd.isna(c):
             continue
 
@@ -131,10 +134,14 @@ def ingest_yahoo_prices_for_symbol(
     try:
         df = _download_yahoo_daily(symbol, effective_from, date_to)
     except Exception as e:
-        # Keep error readable for logs
-        raise RuntimeError(f"yfinance download failed for {symbol}: {e}") from e
+        raise RuntimeError(f"yfinance history failed for {symbol}: {e}") from e
+
+    if df is None or df.empty:
+        time.sleep(sleep_s)
+        return 0
 
     rows = _normalize_yfinance_rows(symbol, df, effective_from, date_to)
+
     if not rows:
         time.sleep(sleep_s)
         return 0

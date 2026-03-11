@@ -4,6 +4,7 @@ import time
 from typing import Optional
 
 import requests
+import yfinance as yf
 
 from src.db import upsert_symbol_map
 
@@ -87,7 +88,6 @@ def _looks_like_us_equity_symbol(sym: str) -> bool:
         return False
 
     # Reject obvious SPAC-ish / rights / warrant-style endings
-    # (your upstream IPO filters already do some of this, but keep it here too)
     if len(sym) >= 2 and sym.endswith(DISALLOWED_ENDINGS):
         return False
 
@@ -135,6 +135,7 @@ def _score_candidate(q: dict, ipo_symbol: str) -> tuple:
 def best_yahoo_symbol_for_ipo_symbol(ipo_symbol: str) -> Optional[str]:
     """
     Return a conservative Yahoo symbol match or None.
+    Exact US match only.
     """
     ipo_symbol = _clean_symbol(ipo_symbol)
     if not _looks_like_us_equity_symbol(ipo_symbol):
@@ -143,7 +144,6 @@ def best_yahoo_symbol_for_ipo_symbol(ipo_symbol: str) -> Optional[str]:
     data = yahoo_search(ipo_symbol)
     quotes = data.get("quotes") or []
 
-    # keep only safe candidates
     candidates = [q for q in quotes if _is_good_candidate(q, ipo_symbol)]
 
     if not candidates:
@@ -157,12 +157,33 @@ def best_yahoo_symbol_for_ipo_symbol(ipo_symbol: str) -> Optional[str]:
 
     best = _clean_symbol(candidates[0].get("symbol"))
 
-    # Strong rule: accept exact match only.
-    # This avoids dangerous mismatches like BAO -> BZUN.
+    # Strong rule: exact match only
     if best == ipo_symbol:
         return best
 
     return None
+
+
+def _has_recent_price_history(symbol: str, lookback_days: int = 30) -> bool:
+    """
+    Validate that Yahoo actually returns at least one recent daily bar.
+    This prevents exact-match-but-non-priceable symbols from being marked priceable.
+    """
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=f"{lookback_days}d", interval="1d", auto_adjust=False, actions=False)
+
+        if hist is None or hist.empty:
+            return False
+
+        # Need at least one non-null close/open/high/low row
+        cols = {str(c).strip().lower() for c in hist.columns}
+        if not {"open", "high", "low", "close"} & cols:
+            return False
+
+        return True
+    except Exception:
+        return False
 
 
 def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8) -> tuple[int, int, int]:
@@ -172,6 +193,7 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
     IMPORTANT:
     - raw.symbol_map.vendor_symbol is NOT NULL
     - for no-match rows, persist vendor_symbol = ipo_symbol and is_priceable = false
+    - even exact search matches are only marked priceable if they have recent Yahoo history
     """
     attempted = 0
     priceable = 0
@@ -192,7 +214,6 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
             if not ipo_sym:
                 continue
 
-            # satisfy NOT NULL constraint
             if not vendor_sym:
                 vendor_sym = ipo_sym
                 r["vendor_symbol"] = vendor_sym
@@ -222,15 +243,28 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
             yahoo_sym = best_yahoo_symbol_for_ipo_symbol(sym)
 
             if yahoo_sym:
-                buffer.append(
-                    {
-                        "ipo_symbol": sym,
-                        "vendor_symbol": yahoo_sym,
-                        "is_priceable": True,
-                        "notes": "yahoo_search:exact_us_match",
-                    }
-                )
-                priceable += 1
+                has_history = _has_recent_price_history(yahoo_sym, lookback_days=30)
+
+                if has_history:
+                    buffer.append(
+                        {
+                            "ipo_symbol": sym,
+                            "vendor_symbol": yahoo_sym,
+                            "is_priceable": True,
+                            "notes": "yahoo_search:exact_us_match_with_history",
+                        }
+                    )
+                    priceable += 1
+                else:
+                    buffer.append(
+                        {
+                            "ipo_symbol": sym,
+                            "vendor_symbol": yahoo_sym,
+                            "is_priceable": False,
+                            "notes": "yahoo_search:no_history",
+                        }
+                    )
+                    not_priceable += 1
             else:
                 buffer.append(
                     {
