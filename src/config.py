@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# Load local .env automatically for CLI runs (ingestion/scripts).
+load_dotenv()
 
 def env(name: str, default: str | None = None) -> str:
     val = os.getenv(name, default)

@@ -18,6 +18,10 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+
+# Load local .env so Streamlit can run without manual export.
+load_dotenv()
 
 # ---------- Helpers ----------
 def _env(name: str, default: str | None = None) -> str | None:

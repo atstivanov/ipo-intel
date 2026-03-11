@@ -209,8 +209,13 @@ def upsert_daily_prices(conn, rows: list[dict]) -> int:
 
 def upsert_company_profiles(conn, rows: list[dict]) -> int:
     """
-    Upsert Finnhub company profiles into raw.company_profiles,
-    but dynamically adapts to the actual table columns.
+    Generic upsert into raw.company_profiles supporting multiple sources.
+
+    Expects rows to already contain at least:
+      - source (e.g. 'finnhub', 'yahoo')
+      - symbol
+
+    We upsert on (source, symbol).
     """
     if not rows:
         return 0
@@ -222,12 +227,7 @@ def upsert_company_profiles(conn, rows: list[dict]) -> int:
         if v is None:
             return None
         s = str(v).strip()
-        return None if s == "" or s.lower() in ("null", "none", "n/a") else s
-
-    def _clean_date(v):
-        # Accept YYYY-MM-DD strings, turn empty -> NULL
-        s = _clean_str(v)
-        return s  # let postgres cast if column is date; if text, ok
+        return None if s == "" or s.lower() in ("null", "none", "n/a", "na", "unknown") else s
 
     def _clean_num(v):
         if v is None:
@@ -235,14 +235,14 @@ def upsert_company_profiles(conn, rows: list[dict]) -> int:
         if isinstance(v, (int, float)):
             return v
         s = str(v).strip()
-        if s == "" or s.lower() in ("null", "none", "n/a"):
+        if s == "" or s.lower() in ("null", "none", "n/a", "na", "unknown"):
             return None
         try:
             return float(s)
         except Exception:
             return None
 
-    # 1) discover table columns
+    # Discover actual table columns
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -256,56 +256,56 @@ def upsert_company_profiles(conn, rows: list[dict]) -> int:
 
     if "symbol" not in cols:
         raise RuntimeError("raw.company_profiles must have a 'symbol' column")
+    if "source" not in cols:
+        raise RuntimeError("raw.company_profiles must have a 'source' column (run sql/004_profiles_and_constraints.sql)")
 
-    # 2) Build a normalized record from finnhub payload, then only keep existing cols
     def to_record(p: dict) -> dict:
-        # Finnhub fields:
-        # ticker, name, exchange, country, ipo, marketCapitalization, finnhubIndustry, weburl, logo
+        # This function accepts already-normalized rows from ingestors.
+        # We still clean them and only keep existing columns.
         rec = {
+            "source": _clean_str(p.get("source")),
             "symbol": _clean_str(p.get("symbol") or p.get("ticker")),
             "name": _clean_str(p.get("name")),
             "exchange": _clean_str(p.get("exchange")),
             "country": _clean_str(p.get("country")),
-            "ipo": _clean_date(p.get("ipo")),
-            "market_cap": _clean_num(p.get("marketCapitalization") or p.get("market_cap")),
-            "industry": _clean_str(p.get("finnhubIndustry") or p.get("industry")),
+            "ipo": _clean_str(p.get("ipo")),  # keep as text/date-compatible
+            "currency": _clean_str(p.get("currency")),
+            "market_cap": _clean_num(p.get("market_cap") or p.get("marketCapitalization")),
+            "industry": _clean_str(p.get("industry") or p.get("finnhubIndustry")),
+            "sector": _clean_str(p.get("sector")),
             "weburl": _clean_str(p.get("weburl")),
             "logo": _clean_str(p.get("logo")),
             "raw_json": json.dumps(p, default=str),
         }
-        # Keep only columns that exist in table
         return {k: v for k, v in rec.items() if k in cols}
 
-    records = [to_record(r) for r in rows if (r.get("ticker") or r.get("symbol"))]
-    records = [r for r in records if r.get("symbol")]
+    records = [to_record(r) for r in rows]
+    records = [r for r in records if r.get("source") and r.get("symbol")]
     if not records:
         return 0
 
-    # 3) Build SQL dynamically
     insert_cols = list(records[0].keys())
 
-    # Ensure all records have same keys (fill missing as None)
+    # Ensure consistent keys across records
     for r in records:
         for c in insert_cols:
             r.setdefault(c, None)
 
     values = [[r[c] for c in insert_cols] for r in records]
 
-    set_cols = [c for c in insert_cols if c != "symbol"]
-    set_clause = ",\n      ".join([f"{c} = EXCLUDED.{c}" for c in set_cols]) if set_cols else ""
+    # Update all except keys
+    key_cols = {"source", "symbol"}
+    set_cols = [c for c in insert_cols if c not in key_cols]
+    set_clause = ",\n      ".join([f"{c} = EXCLUDED.{c}" for c in set_cols])
 
     sql = f"""
     INSERT INTO raw.company_profiles ({", ".join(insert_cols)})
     VALUES %s
-    ON CONFLICT (symbol)
+    ON CONFLICT (source, symbol)
     DO UPDATE SET
-      {set_clause}
+      {set_clause},
+      ingested_at = now()
     ;
-    """ if set_clause else f"""
-    INSERT INTO raw.company_profiles ({", ".join(insert_cols)})
-    VALUES %s
-    ON CONFLICT (symbol)
-    DO NOTHING;
     """
 
     try:

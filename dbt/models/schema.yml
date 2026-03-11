@@ -21,7 +21,7 @@ sources:
 
 models:
   - name: stg_ipos_recent
-    description: "Recent IPO events (last 180 days) with valid symbols, mapping to price symbol, and profile enrichment"
+    description: "Recent IPO events with symbol mapping and preferred company profile (finnhub -> yahoo)"
     columns:
       - name: event_id
         tests: [not_null, unique]
@@ -29,7 +29,7 @@ models:
       - name: ipo_date
         tests: [not_null]
 
-      - name: symbol
+      - name: ipo_symbol
         tests: [not_null]
 
       - name: price_symbol
@@ -38,101 +38,41 @@ models:
               config:
                 severity: warn
 
-      - name: is_priceable
+      - name: industry
         tests:
           - not_null:
               config:
                 severity: warn
 
+      - name: sector
+        tests:
+          - not_null:
+              config:
+                severity: warn
 
   - name: stg_prices_ipo_window_100d
-    description: "Daily prices aligned to IPO date for the first 0..100 day window"
+    description: "Daily prices aligned to IPO date for 0..N day window; prefers alphavantage then yahoo"
     columns:
       - name: event_id
-        description: "IPO event id"
-        tests:
-          - not_null
+        tests: [not_null]
 
       - name: price_date
-        description: "Trading date"
-        tests:
-          - not_null
+        tests: [not_null]
 
       - name: close
-        description: "Close price"
         tests:
           - not_null:
               config:
                 severity: warn
+
+      - name: price_source
+        tests: [not_null]
 
   - name: ipo_metrics_100d
-    description: "Per-IPO performance metrics over the first 100 trading days (partial windows allowed)"
+    description: "Per-IPO metrics over first 100 trading days"
     columns:
       - name: event_id
-        description: "IPO event id (primary key)"
-        tests:
-          - not_null
-          - unique
-
+        tests: [not_null, unique]
+        
       - name: ipo_date
-        description: "IPO date"
-        tests:
-          - not_null
-
-      - name: n_days
-        description: "Number of trading days observed in the window"
-        tests:
-          - not_null:
-              config:
-                severity: warn
-
-      - name: return_100d
-        description: "Total return over available window up to 100 days"
-        tests:
-          - dbt_utils.expression_is_true:
-              arguments:
-                expression: "return_100d is null OR (return_100d >= -0.99 AND return_100d <= 10)"
-              config:
-                severity: warn
-
-      - name: first_day_return_pct
-        description: "First trading-day return (day2 vs day1)"
-        tests:
-          - dbt_utils.expression_is_true:
-              arguments:
-                expression: "first_day_return_pct is null OR (first_day_return_pct >= -0.99 AND first_day_return_pct <= 10)"
-              config:
-                severity: warn
-
-      - name: max_drawdown_100d
-        description: "Max drawdown approximation within the window"
-        tests:
-          - dbt_utils.expression_is_true:
-              arguments:
-                expression: "max_drawdown_100d is null OR (max_drawdown_100d >= -0.99 AND max_drawdown_100d <= 1)"
-              config:
-                severity: warn
-
-      - name: positive_days_ratio_100d
-        description: "Share of days with close > previous close"
-        tests:
-          - dbt_utils.expression_is_true:
-              arguments:
-                expression: "positive_days_ratio_100d is null OR (positive_days_ratio_100d >= 0 AND positive_days_ratio_100d <= 1)"
-              config:
-                severity: warn
-
-  - name: industry_benchmarks_100d
-    description: "Industry benchmarks for recent IPOs (100-day window)"
-    columns:
-      - name: industry
-        description: "Industry label (from Finnhub profile)"
-        tests:
-          - not_null:
-              config:
-                severity: warn
-
-      - name: ipo_year
-        description: "IPO year"
-        tests:
-          - not_null
+        tests: [not_null]

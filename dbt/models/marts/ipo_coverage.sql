@@ -1,61 +1,58 @@
-{{ config(materialized='table') }}
+{{ config(materialized='table', schema='analytics') }}
 
-with ipos as (
-    select
+WITH ipos AS (
+    SELECT
         event_id,
         ipo_date,
-        symbol,
-        case
-            when symbol ~ '.*(U|W|R)$' then 'spac_like'
-            else 'equity_candidate'
-        end as instrument_type
-    from {{ ref('stg_ipos_valid') }}
-),
-
-mapped as (
-    select
-        vendor,
         ipo_symbol,
-        vendor_symbol,
+        company_name,
+        exchange,
+        industry,
+        sector,
+        price_vendor,
+        price_symbol,
         is_priceable
-    from raw.symbol_map
-    where vendor = 'alphavantage'
+    FROM {{ ref('stg_ipos_recent') }}
 ),
 
-price_days as (
-    select
-        symbol,
-        count(*) as price_rows,
-        min(price_date) as min_price_date,
-        max(price_date) as max_price_date
-    from raw.daily_prices
-    where source = 'alphavantage'
-    group by 1
-),
-
-joined as (
-    select
-        i.event_id,
-        i.ipo_date,
-        i.symbol as ipo_symbol,
-        i.instrument_type,
-        m.vendor_symbol,
-        m.is_priceable,
-        coalesce(p.price_rows, 0) as price_rows,
-        p.min_price_date,
-        p.max_price_date,
-        case
-            when i.instrument_type = 'spac_like' then 'excluded_spac_like'
-            when m.ipo_symbol is null then 'unmapped'
-            when m.is_priceable = false then 'mapped_not_priceable'
-            when coalesce(p.price_rows,0) = 0 then 'mapped_priceable_no_data'
-            else 'has_prices'
-        end as coverage_status
-    from ipos i
-    left join mapped m
-      on m.ipo_symbol = i.symbol
-    left join price_days p
-      on p.symbol = m.vendor_symbol
+prices AS (
+    SELECT
+        event_id,
+        COUNT(*) AS price_rows,
+        MIN(price_date) AS first_price_date,
+        MAX(price_date) AS last_price_date,
+        COUNT(DISTINCT price_date) AS distinct_price_days
+    FROM {{ ref('stg_prices_ipo_window_100d') }}
+    GROUP BY 1
 )
 
-select * from joined
+SELECT
+    i.event_id,
+    i.ipo_date,
+    i.ipo_symbol,
+    i.company_name,
+    i.exchange,
+    i.industry,
+    i.sector,
+    i.price_vendor,
+    i.price_symbol,
+    i.is_priceable,
+    COALESCE(p.price_rows, 0) AS price_rows,
+    COALESCE(p.distinct_price_days, 0) AS distinct_price_days,
+    p.first_price_date,
+    p.last_price_date,
+    CASE
+        WHEN i.is_priceable = false THEN 'not_priceable'
+        WHEN i.price_symbol IS NULL THEN 'unmapped'
+        WHEN COALESCE(p.distinct_price_days, 0) = 0 THEN 'mapped_but_no_prices'
+        WHEN COALESCE(p.distinct_price_days, 0) < 20 THEN 'very_low_coverage'
+        WHEN COALESCE(p.distinct_price_days, 0) < 60 THEN 'partial_coverage'
+        ELSE 'good_coverage'
+    END AS coverage_status,
+    CASE
+        WHEN COALESCE(p.distinct_price_days, 0) >= 60 THEN true
+        ELSE false
+    END AS is_analysis_ready
+FROM ipos i
+LEFT JOIN prices p
+    ON i.event_id = p.event_id

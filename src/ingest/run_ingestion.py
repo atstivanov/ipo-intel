@@ -5,10 +5,17 @@ import os
 import time
 
 from src.db import get_conn, start_run, finish_run
+
 from src.ingest.finnhub_ipo_calendar import ingest_finnhub_ipos
 from src.ingest.finnhub_company_profile import ingest_finnhub_company_profiles
-from src.ingest.alphavantage_symbol_search import resolve_and_upsert
+
+from src.ingest.alphavantage_symbol_search import resolve_and_upsert as resolve_alpha_and_upsert
 from src.ingest.alphavantage_prices import ingest_alpha_prices_for_symbol
+
+# Yahoo fallbacks (yfinance-based)
+from src.ingest.yahoo_symbol_search import resolve_yahoo_and_upsert
+from src.ingest.yahoo_company_profile import ingest_yahoo_company_profiles
+from src.ingest.yahoo_prices import ingest_yahoo_prices_for_symbol
 
 
 def _env_int(name: str, default: int) -> int:
@@ -28,10 +35,20 @@ def _env_bool(name: str, default: bool) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "y", "on")
 
 
-# ===== knobs =====
+# -----------------------
+# Knobs
+# -----------------------
+
+# IPO calendar ingestion mode
+IPO_FULL_BACKFILL = _env_bool("IPO_FULL_BACKFILL", False)
+
 IPO_BACKFILL_START_YEAR = _env_int("IPO_BACKFILL_START_YEAR", 2014)
 IPO_BACKFILL_END_YEAR = _env_int("IPO_BACKFILL_END_YEAR", date.today().year + 1)
 
+IPO_CALENDAR_LOOKBACK_DAYS = _env_int("IPO_CALENDAR_LOOKBACK_DAYS", 365)
+IPO_CALENDAR_LOOKAHEAD_DAYS = _env_int("IPO_CALENDAR_LOOKAHEAD_DAYS", 14)
+
+# Cohort + price window
 IPO_RECENT_DAYS = _env_int("IPO_RECENT_DAYS", 120)
 PRICE_WINDOW_DAYS = _env_int("IPO_PRICE_WINDOW_DAYS", 100)
 
@@ -39,15 +56,29 @@ PRICE_WINDOW_DAYS = _env_int("IPO_PRICE_WINDOW_DAYS", 100)
 FINNHUB_PROFILE_MAX_PER_RUN = _env_int("FINNHUB_PROFILE_MAX_PER_RUN", 30)
 FINNHUB_PROFILE_SLEEP_SECONDS = _env_float("FINNHUB_PROFILE_SLEEP_SECONDS", 0.8)
 
+# Yahoo profiles fallback
+YAHOO_PROFILE_MAX_PER_RUN = _env_int("YAHOO_PROFILE_MAX_PER_RUN", 50)
+YAHOO_PROFILE_SLEEP_SECONDS = _env_float("YAHOO_PROFILE_SLEEP_SECONDS", 0.6)
+
 # Alpha symbol resolving
-MAX_RESOLVE_PER_RUN = _env_int("ALPHAVANTAGE_MAX_RESOLVE_PER_RUN", 50)
-RESOLVE_SLEEP_SECONDS = _env_float("ALPHAVANTAGE_RESOLVE_SLEEP_SECONDS", 12.0)
+ALPHA_MAX_RESOLVE_PER_RUN = _env_int("ALPHAVANTAGE_MAX_RESOLVE_PER_RUN", 50)
+ALPHA_RESOLVE_SLEEP_SECONDS = _env_float("ALPHAVANTAGE_RESOLVE_SLEEP_SECONDS", 12.0)
 
-# Alpha pricing
-MAX_TICKERS_PER_RUN = _env_int("ALPHAVANTAGE_MAX_TICKERS_PER_RUN", 25)
-SLEEP_SECONDS_BETWEEN_TICKERS = _env_float("ALPHAVANTAGE_SLEEP_SECONDS", 15.0)
+# Yahoo symbol resolving fallback
+YAHOO_MAX_RESOLVE_PER_RUN = _env_int("YAHOO_MAX_RESOLVE_PER_RUN", 80)
+YAHOO_RESOLVE_SLEEP_SECONDS = _env_float("YAHOO_RESOLVE_SLEEP_SECONDS", 0.8)
+
+# Pricing controls
+MAX_TICKERS_PER_RUN = _env_int("MAX_TICKERS_PER_RUN", 40)
+SLEEP_SECONDS_BETWEEN_TICKERS = _env_float("SLEEP_SECONDS_BETWEEN_TICKERS", 1.0)
+
 PRICE_INCREMENTAL = _env_bool("PRICE_INCREMENTAL", True)
+ENABLE_YAHOO_PRICE_FALLBACK = _env_bool("ENABLE_YAHOO_PRICE_FALLBACK", True)
 
+
+# -----------------------
+# Helpers
+# -----------------------
 
 def backfill_ipos_yearly(conn) -> int:
     total = 0
@@ -58,10 +89,18 @@ def backfill_ipos_yearly(conn) -> int:
     return total
 
 
-def fetch_recent_equity_candidate_symbols(conn, recent_days: int) -> list[str]:
+def ingest_ipos_incremental(conn) -> int:
+    d_from = date.today() - timedelta(days=IPO_CALENDAR_LOOKBACK_DAYS)
+    d_to = date.today() + timedelta(days=IPO_CALENDAR_LOOKAHEAD_DAYS)
+    n = ingest_finnhub_ipos(conn, d_from, d_to)
+    print(f"📥 IPO incremental window: {d_from} -> {d_to} | events={n}")
+    return n
+
+
+def fetch_recent_equity_symbols(conn, recent_days: int) -> list[str]:
     """
     Recent IPO symbols that look like common-stock candidates.
-    We explicitly exclude SPAC-like suffixes U/W/R.
+    Excludes SPAC-like suffixes U/W/R.
     """
     with conn.cursor() as cur:
         cur.execute(
@@ -82,8 +121,8 @@ def fetch_recent_equity_candidate_symbols(conn, recent_days: int) -> list[str]:
 
 def fetch_symbols_missing_profile(conn, recent_days: int, limit_n: int) -> list[str]:
     """
-    Only fetch profiles for symbols that are missing profiles
-    OR missing industry/sector (i.e. still not enriched).
+    Symbols missing a usable industry/sector in ANY preferred profile source.
+    Consider enriched if it has at least industry OR sector (from finnhub or yahoo).
     """
     with conn.cursor() as cur:
         cur.execute(
@@ -98,10 +137,16 @@ def fetch_symbols_missing_profile(conn, recent_days: int, limit_n: int) -> list[
                 AND symbol !~ '.*(U|W|R)$'
                 AND ipo_date >= (CURRENT_DATE - (%s || ' days')::interval)
             ) s
-            LEFT JOIN raw.company_profiles p
-              ON p.symbol = s.symbol
+            LEFT JOIN (
+              SELECT symbol,
+                     MAX(NULLIF(industry,'')) AS industry_any,
+                     MAX(NULLIF(sector,'')) AS sector_any
+              FROM raw.company_profiles
+              WHERE source IN ('finnhub','yahoo')
+              GROUP BY symbol
+            ) p ON p.symbol = s.symbol
             WHERE p.symbol IS NULL
-               OR NULLIF(p.industry,'') IS NULL
+               OR (p.industry_any IS NULL AND p.sector_any IS NULL)
             ORDER BY s.symbol
             LIMIT %s;
             """,
@@ -111,6 +156,9 @@ def fetch_symbols_missing_profile(conn, recent_days: int, limit_n: int) -> list[
 
 
 def fetch_unresolved_symbols_recent(conn, vendor: str, recent_days: int, limit_n: int) -> list[str]:
+    """
+    IPO symbols without ANY symbol_map row for that vendor.
+    """
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -136,6 +184,10 @@ def fetch_unresolved_symbols_recent(conn, vendor: str, recent_days: int, limit_n
 
 
 def fetch_priceable_pairs_recent(conn, vendor: str, recent_days: int, limit_n: int) -> list[tuple[str, str, date]]:
+    """
+    Vendor mapped and priceable pairs.
+    Returns: (ipo_symbol, vendor_symbol, ipo_date)
+    """
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -144,6 +196,7 @@ def fetch_priceable_pairs_recent(conn, vendor: str, recent_days: int, limit_n: i
             JOIN raw.symbol_map m
               ON m.vendor = %s AND m.ipo_symbol = e.symbol
             WHERE m.is_priceable = true
+              AND m.vendor_symbol IS NOT NULL
               AND e.ipo_date IS NOT NULL
               AND e.symbol ~ '^[A-Z]{1,5}$'
               AND e.symbol !~ '.*(U|W|R)$'
@@ -157,75 +210,144 @@ def fetch_priceable_pairs_recent(conn, vendor: str, recent_days: int, limit_n: i
         return [(r[0], r[1], r[2]) for r in cur.fetchall()]
 
 
+# -----------------------
+# Main
+# -----------------------
+
 def main():
     conn = get_conn()
     run_id = start_run(conn, "ipo_ingestion")
 
     try:
-        # 1) IPO backfill
-        n_ipos = backfill_ipos_yearly(conn)
-
-        # 2) Company profiles (incremental, capped)
-        to_profile = fetch_symbols_missing_profile(conn, IPO_RECENT_DAYS, FINNHUB_PROFILE_MAX_PER_RUN)
-        n_profiles = 0
-        if to_profile:
-            n_profiles = ingest_finnhub_company_profiles(conn, to_profile, sleep_s=FINNHUB_PROFILE_SLEEP_SECONDS)
-        print(f"🏷️ Company profiles upserted: {n_profiles} (attempted={len(to_profile)})")
-
-        # 3) Resolve Alpha symbols for equity candidates (capped)
-        unresolved = fetch_unresolved_symbols_recent(conn, "alphavantage", IPO_RECENT_DAYS, MAX_RESOLVE_PER_RUN)
-        if unresolved:
-            attempted, priceable, not_priceable = resolve_and_upsert(conn, unresolved, sleep_s=RESOLVE_SLEEP_SECONDS)
-            print(f"🧭 Symbol resolve: attempted={attempted}, priceable={priceable}, not_priceable={not_priceable}")
+        # 1) IPO calendar ingestion
+        if IPO_FULL_BACKFILL:
+            n_ipos = backfill_ipos_yearly(conn)
         else:
-            print("🧭 Symbol resolve: nothing new to resolve")
+            n_ipos = ingest_ipos_incremental(conn)
 
-        # 4) Prices for mapped+priceable equity candidates (capped)
-        pairs = fetch_priceable_pairs_recent(conn, "alphavantage", IPO_RECENT_DAYS, MAX_TICKERS_PER_RUN)
+        # 2) Profiles: Finnhub first (capped)
+        to_profile_fh = fetch_symbols_missing_profile(conn, IPO_RECENT_DAYS, FINNHUB_PROFILE_MAX_PER_RUN)
+        n_fh_profiles = 0
+        if to_profile_fh:
+            n_fh_profiles = ingest_finnhub_company_profiles(
+                conn, to_profile_fh, sleep_s=FINNHUB_PROFILE_SLEEP_SECONDS
+            )
+        print(f"🏷️ Finnhub profiles upserted: {n_fh_profiles} (attempted={len(to_profile_fh)})")
+
+        # 2b) Profiles: Yahoo fallback for symbols STILL missing industry/sector (capped)
+        to_profile_yh = fetch_symbols_missing_profile(conn, IPO_RECENT_DAYS, YAHOO_PROFILE_MAX_PER_RUN)
+        n_yh_profiles = 0
+        if to_profile_yh:
+            n_yh_profiles = ingest_yahoo_company_profiles(
+                conn, to_profile_yh, sleep_s=YAHOO_PROFILE_SLEEP_SECONDS
+            )
+        print(f"🏷️ Yahoo profiles upserted: {n_yh_profiles} (attempted={len(to_profile_yh)})")
+
+        # 3) Mapping: Alpha first (capped)
+        unresolved_alpha = fetch_unresolved_symbols_recent(conn, "alphavantage", IPO_RECENT_DAYS, ALPHA_MAX_RESOLVE_PER_RUN)
+        alpha_attempted = alpha_priceable = alpha_not_priceable = 0
+        if unresolved_alpha:
+            alpha_attempted, alpha_priceable, alpha_not_priceable = resolve_alpha_and_upsert(
+                conn, unresolved_alpha, sleep_s=ALPHA_RESOLVE_SLEEP_SECONDS
+            )
+            print(f"🧭 Alpha mapping: attempted={alpha_attempted}, priceable={alpha_priceable}, not_priceable={alpha_not_priceable}")
+        else:
+            print("🧭 Alpha mapping: nothing new to resolve")
+
+        # 3b) Mapping: Yahoo fallback (capped)
+        unresolved_yahoo = fetch_unresolved_symbols_recent(conn, "yahoo", IPO_RECENT_DAYS, YAHOO_MAX_RESOLVE_PER_RUN)
+        yh_attempted = yh_priceable = yh_not_priceable = 0
+        if unresolved_yahoo:
+            yh_attempted, yh_priceable, yh_not_priceable = resolve_yahoo_and_upsert(
+                conn, unresolved_yahoo, sleep_s=YAHOO_RESOLVE_SLEEP_SECONDS
+            )
+            print(f"🧭 Yahoo mapping: attempted={yh_attempted}, priceable={yh_priceable}, not_priceable={yh_not_priceable}")
+        else:
+            print("🧭 Yahoo mapping: nothing new to resolve")
+
+        # 4) Prices: Alpha first, Yahoo fallback per IPO symbol
+        alpha_pairs = fetch_priceable_pairs_recent(conn, "alphavantage", IPO_RECENT_DAYS, MAX_TICKERS_PER_RUN)
+        yahoo_pairs = fetch_priceable_pairs_recent(conn, "yahoo", IPO_RECENT_DAYS, MAX_TICKERS_PER_RUN)
+
+        # Lookup yahoo vendor symbol by ipo_symbol
+        yahoo_by_ipo: dict[str, tuple[str, date]] = {}
+        for ipo_symbol, vendor_symbol, ipo_dt in yahoo_pairs:
+            yahoo_by_ipo.setdefault(ipo_symbol, (vendor_symbol, ipo_dt))
 
         today = date.today()
-        total_rows = 0
         attempted = 0
+        total_rows = 0
         with_data = 0
         no_data = 0
         failed = 0
+        alpha_used = 0
+        yahoo_used = 0
 
-        for ipo_symbol, vendor_symbol, ipo_dt in pairs:
+        for ipo_symbol, alpha_symbol, ipo_dt in alpha_pairs:
+            if attempted >= MAX_TICKERS_PER_RUN:
+                break
+
             attempted += 1
             price_from = ipo_dt
             price_to = min(ipo_dt + timedelta(days=PRICE_WINDOW_DAYS), today)
 
+            inserted_total_for_ipo = 0
+
+            # --- Alpha attempt ---
             try:
                 inserted = ingest_alpha_prices_for_symbol(
                     conn=conn,
-                    symbol=vendor_symbol,
+                    symbol=alpha_symbol,
                     date_from=price_from,
                     date_to=price_to,
                     incremental=PRICE_INCREMENTAL,
                 )
-                total_rows += inserted
-                if inserted > 0:
-                    with_data += 1
-                else:
-                    no_data += 1
-
+                inserted_total_for_ipo += inserted
+                alpha_used += 1
             except Exception as e:
                 failed += 1
                 msg = str(e)
-                print(f"⚠️ Prices failed for {ipo_symbol}->{vendor_symbol} ({ipo_dt}): {msg}")
+                print(f"⚠️ Alpha prices failed for {ipo_symbol}->{alpha_symbol} ({ipo_dt}): {msg}")
 
                 low = msg.lower()
                 if "rate limit" in low or "call frequency" in low:
-                    print("⛔ Stopping early due to Alpha Vantage rate limit. Tune sleeps/chunks or rerun later.")
+                    print("⛔ Stopping early due to Alpha Vantage rate limit.")
+                    conn.rollback()
                     break
 
-                # IMPORTANT: prevent one failure from poisoning the whole run
                 conn.rollback()
+
+            # --- Yahoo fallback if needed ---
+            if ENABLE_YAHOO_PRICE_FALLBACK and inserted_total_for_ipo == 0:
+                yh = yahoo_by_ipo.get(ipo_symbol)
+                if yh and yh[0]:
+                    yahoo_symbol = yh[0]
+                    try:
+                        inserted_yh = ingest_yahoo_prices_for_symbol(
+                            conn=conn,
+                            symbol=yahoo_symbol,
+                            date_from=price_from,
+                            date_to=price_to,
+                            incremental=PRICE_INCREMENTAL,
+                        )
+                        inserted_total_for_ipo += inserted_yh
+                        yahoo_used += 1
+                    except Exception as e:
+                        failed += 1
+                        print(f"⚠️ Yahoo prices failed for {ipo_symbol}->{yahoo_symbol} ({ipo_dt}): {e}")
+                        conn.rollback()
+
+            total_rows += inserted_total_for_ipo
+            if inserted_total_for_ipo > 0:
+                with_data += 1
+            else:
+                no_data += 1
 
             if attempted % 10 == 0:
                 print(
-                    f"📈 Prices progress: {attempted}/{len(pairs)} tickers | "
-                    f"rows={total_rows} | with_data={with_data} | no_data={no_data} | failed={failed}"
+                    f"📈 Prices progress: {attempted}/{min(len(alpha_pairs), MAX_TICKERS_PER_RUN)} | "
+                    f"rows={total_rows} | with_data={with_data} | no_data={no_data} | failed={failed} | "
+                    f"alpha_used={alpha_used} | yahoo_used={yahoo_used}"
                 )
 
             time.sleep(SLEEP_SECONDS_BETWEEN_TICKERS)
@@ -235,19 +357,23 @@ def main():
             run_id,
             "success",
             notes=(
-                f"ipos={n_ipos}, profiles_upserted={n_profiles}, "
-                f"prices_tickers={attempted}, prices_rows={total_rows}, "
-                f"with_data={with_data}, no_data={no_data}, failed={failed}"
+                f"ipos={n_ipos}, fh_profiles={n_fh_profiles}, yh_profiles={n_yh_profiles}, "
+                f"alpha_map_attempted={alpha_attempted}, alpha_map_priceable={alpha_priceable}, alpha_map_not_priceable={alpha_not_priceable}, "
+                f"yahoo_map_attempted={yh_attempted}, yahoo_map_priceable={yh_priceable}, yahoo_map_not_priceable={yh_not_priceable}, "
+                f"prices_tickers={attempted}, prices_rows={total_rows}, with_data={with_data}, "
+                f"no_data={no_data}, failed={failed}, alpha_used={alpha_used}, yahoo_used={yahoo_used}"
             ),
         )
+
         print(
-            f"✅ Ingestion ok: IPO events={n_ipos}, tickers={attempted}, "
-            f"daily prices rows={total_rows}, with_data={with_data}, no_data={no_data}, failed={failed}"
+            "✅ Ingestion ok: "
+            f"ipos={n_ipos}, fh_profiles={n_fh_profiles}, yh_profiles={n_yh_profiles}, "
+            f"prices_tickers={attempted}, rows={total_rows}, with_data={with_data}, no_data={no_data}, failed={failed}, "
+            f"alpha_used={alpha_used}, yahoo_used={yahoo_used}"
         )
 
     except Exception as e:
         conn.rollback()
-        # finish_run must not be called inside an aborted transaction
         try:
             finish_run(conn, run_id, "failed", notes=str(e))
         except Exception:

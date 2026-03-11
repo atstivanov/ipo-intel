@@ -1,104 +1,92 @@
 {{ config(materialized='table', schema='analytics') }}
 
-with ipos as (
-  select * from {{ ref('stg_ipos_recent') }}
+WITH prices AS (
+    SELECT
+        event_id,
+        ipo_symbol,
+        ipo_date,
+        price_symbol,
+        price_source,
+        price_date,
+        close,
+        day_num,
+        ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY price_date) AS rn_asc,
+        ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY price_date DESC) AS rn_desc
+    FROM {{ ref('stg_prices_ipo_window_100d') }}
+    WHERE close IS NOT NULL
 ),
 
-px as (
-  select
-    event_id,
-    price_date,
-    close,
-    lag(close) over (partition by event_id order by price_date) as prev_close,
-    row_number() over (partition by event_id order by price_date) as rn,
-    count(*) over (partition by event_id) as n_days,
-    first_value(close) over (partition by event_id order by price_date) as first_close,
-    last_value(close) over (
-      partition by event_id order by price_date
-      rows between unbounded preceding and unbounded following
-    ) as last_close,
-    min(close) over (partition by event_id) as min_close,
-    max(close) over (partition by event_id) as max_close
-  from {{ ref('stg_prices_ipo_window_100d') }}
-  where close is not null
+first_last AS (
+    SELECT
+        event_id,
+        MAX(CASE WHEN rn_asc = 1 THEN close END) AS first_close,
+        MAX(CASE WHEN rn_desc = 1 THEN close END) AS last_close
+    FROM prices
+    GROUP BY 1
 ),
 
-agg as (
-  select
-    event_id,
-
-    max(n_days) as n_days,
-    max(first_close) as first_close,
-    max(last_close) as last_close,
-    min(min_close) as min_close,
-    max(max_close) as max_close,
-
-    -- first trading day return (day2 vs day1), only if we have >=2 rows
-    max(case when rn = 1 then close end) as day1_close,
-    max(case when rn = 2 then close end) as day2_close,
-
-    -- positive days ratio over the window: count of days where close > prev_close (ignore first day)
-    sum(case when prev_close is not null and close > prev_close then 1 else 0 end) as positive_days,
-    sum(case when prev_close is not null then 1 else 0 end) as comparable_days
-
-  from px
-  group by event_id
+agg AS (
+    SELECT
+        event_id,
+        COUNT(*) AS n_days,
+        MIN(close) AS min_close,
+        MAX(close) AS max_close
+    FROM prices
+    GROUP BY 1
 ),
 
-metrics as (
-  select
-    a.event_id,
-    a.n_days,
-    a.first_close,
-    a.last_close,
-
-    -- return over the whole available window up to 100d (not necessarily full 100 if not enough data)
-    case
-      when a.first_close is null or a.first_close = 0 or a.last_close is null then null
-      else (a.last_close / a.first_close) - 1
-    end as return_100d,
-
-    -- first day return pct (day2 vs day1)
-    case
-      when a.day1_close is null or a.day1_close = 0 or a.day2_close is null then null
-      else (a.day2_close / a.day1_close) - 1
-    end as first_day_return_pct,
-
-    -- max drawdown approximation using min/max in window
-    case
-      when a.max_close is null or a.max_close = 0 or a.min_close is null then null
-      else 1 - (a.min_close / a.max_close)
-    end as max_drawdown_100d,
-
-    -- positive days ratio
-    case
-      when a.comparable_days is null or a.comparable_days = 0 then null
-      else (a.positive_days::numeric / a.comparable_days::numeric)
-    end as positive_days_ratio_100d
-
-  from agg a
+joined AS (
+    SELECT
+        c.event_id,
+        c.ipo_date,
+        c.ipo_symbol,
+        c.company_name,
+        c.exchange,
+        c.industry,
+        c.sector,
+        c.price_vendor,
+        c.price_symbol,
+        c.coverage_status,
+        c.is_analysis_ready,
+        a.n_days,
+        fl.first_close,
+        fl.last_close,
+        a.min_close,
+        a.max_close
+    FROM {{ ref('ipo_coverage') }} c
+    LEFT JOIN agg a
+        ON c.event_id = a.event_id
+    LEFT JOIN first_last fl
+        ON c.event_id = fl.event_id
 )
 
-select
-  i.event_id,
-  i.ipo_date,
-  i.ipo_symbol,
-  i.price_symbol,
-  i.company_name,
-  i.exchange,
-  i.industry,
-  i.country,
-  i.market_cap,
-
-  m.n_days,
-  m.first_close,
-  m.last_close,
-  m.return_100d,
-  m.first_day_return_pct,
-  m.max_drawdown_100d,
-  m.positive_days_ratio_100d,
-
-  current_date as as_of_date
-from ipos i
-left join metrics m
-  on m.event_id = i.event_id
+SELECT
+    event_id,
+    ipo_date,
+    ipo_symbol,
+    company_name,
+    exchange,
+    industry,
+    sector,
+    price_vendor,
+    price_symbol,
+    coverage_status,
+    is_analysis_ready,
+    n_days,
+    first_close,
+    last_close,
+    min_close,
+    max_close,
+    CASE
+        WHEN first_close IS NULL OR last_close IS NULL OR first_close = 0 THEN NULL
+        ELSE (last_close - first_close) / first_close
+    END AS return_100d,
+    CASE
+        WHEN first_close IS NULL OR max_close IS NULL OR first_close = 0 THEN NULL
+        ELSE (max_close - first_close) / first_close
+    END AS max_gain_100d,
+    CASE
+        WHEN first_close IS NULL OR min_close IS NULL OR first_close = 0 THEN NULL
+        ELSE (min_close - first_close) / first_close
+    END AS max_drawdown_100d
+FROM joined
