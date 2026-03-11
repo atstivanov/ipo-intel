@@ -9,6 +9,42 @@ from src.db import upsert_symbol_map
 
 BASE = "https://query2.finance.yahoo.com/v1/finance/search"
 
+# Keep resolution conservative for this capstone:
+# we only want likely US tradable common-stock style tickers.
+US_EXCHANGES = {
+    "NYQ",      # NYSE
+    "NMS",      # NASDAQ Global Select
+    "NGM",      # NASDAQ Global Market
+    "NCM",      # NASDAQ Capital Market
+    "ASE",      # AMEX / NYSE American
+    "NYSE",
+    "NASDAQ",
+    "AMEX",
+}
+
+ALLOWED_QUOTE_TYPES = {"EQUITY", "ETF"}
+
+# Reject obvious bad / foreign / derivative patterns
+DISALLOWED_SUBSTRINGS = (
+    ".",        # foreign suffixes like .T .MI .L .DE
+    "=F",       # futures
+    "^",        # indexes
+    "-UN",      # units
+    "-U",
+    "-WT",      # warrants
+    "-WS",
+    "-RT",      # rights
+    "-P",       # preferred / odd structured
+)
+
+# Extra hard blocks for suspicious forms frequently returned by Yahoo
+DISALLOWED_ENDINGS = (
+    "W",
+    "R",
+)
+
+USER_AGENT = "Mozilla/5.0"
+
 
 def yahoo_search(query: str) -> dict:
     params = {
@@ -21,42 +57,110 @@ def yahoo_search(query: str) -> dict:
         BASE,
         params=params,
         timeout=30,
-        headers={"User-Agent": "Mozilla/5.0"},
+        headers={"User-Agent": USER_AGENT},
     )
     r.raise_for_status()
     return r.json() or {}
 
 
+def _clean_symbol(sym: str | None) -> str:
+    return (sym or "").strip().upper()
+
+
+def _looks_like_us_equity_symbol(sym: str) -> bool:
+    """
+    Very conservative symbol acceptance for this project.
+    We only want simple US-style symbols like ARM, CAST, BOBS, etc.
+    """
+    sym = _clean_symbol(sym)
+    if not sym:
+        return False
+
+    for bad in DISALLOWED_SUBSTRINGS:
+        if bad in sym:
+            return False
+
+    if not sym.isalnum():
+        return False
+
+    if len(sym) < 1 or len(sym) > 5:
+        return False
+
+    # Reject obvious SPAC-ish / rights / warrant-style endings
+    # (your upstream IPO filters already do some of this, but keep it here too)
+    if len(sym) >= 2 and sym.endswith(DISALLOWED_ENDINGS):
+        return False
+
+    return True
+
+
+def _is_good_candidate(q: dict, ipo_symbol: str) -> bool:
+    sym = _clean_symbol(q.get("symbol"))
+    exch = _clean_symbol(q.get("exchange"))
+    quote_type = _clean_symbol(q.get("quoteType"))
+
+    if not sym:
+        return False
+    if quote_type not in ALLOWED_QUOTE_TYPES:
+        return False
+    if exch not in US_EXCHANGES:
+        return False
+    if not _looks_like_us_equity_symbol(sym):
+        return False
+
+    return True
+
+
+def _score_candidate(q: dict, ipo_symbol: str) -> tuple:
+    """
+    Higher is better.
+    Prioritize:
+      1) exact symbol match
+      2) US exchange
+      3) EQUITY over ETF
+      4) shorter/simple symbol
+    """
+    sym = _clean_symbol(q.get("symbol"))
+    exch = _clean_symbol(q.get("exchange"))
+    quote_type = _clean_symbol(q.get("quoteType"))
+
+    exact = 1 if sym == _clean_symbol(ipo_symbol) else 0
+    us = 1 if exch in US_EXCHANGES else 0
+    equity = 1 if quote_type == "EQUITY" else 0
+    short = -len(sym) if sym else -99
+
+    return (exact, us, equity, short)
+
+
 def best_yahoo_symbol_for_ipo_symbol(ipo_symbol: str) -> Optional[str]:
     """
-    Try to find a likely Yahoo tradable symbol for an IPO symbol.
-    Prefer exact-match equities on major exchanges.
+    Return a conservative Yahoo symbol match or None.
     """
+    ipo_symbol = _clean_symbol(ipo_symbol)
+    if not _looks_like_us_equity_symbol(ipo_symbol):
+        return None
+
     data = yahoo_search(ipo_symbol)
     quotes = data.get("quotes") or []
 
-    def score(q: dict) -> tuple:
-        quote_type = (q.get("quoteType") or "").upper()
-        exch = (q.get("exchange") or "").upper()
-        sym = (q.get("symbol") or "").upper()
+    # keep only safe candidates
+    candidates = [q for q in quotes if _is_good_candidate(q, ipo_symbol)]
 
-        exact = 1 if sym == ipo_symbol.upper() else 0
-        is_equity = 1 if quote_type in ("EQUITY", "ETF") else 0
-        is_us = 1 if exch in ("NYQ", "NMS", "NGM", "ASE") else 0
-        return (exact, is_equity, is_us)
+    if not candidates:
+        return None
 
-    quotes_sorted = sorted(quotes, key=score, reverse=True)
+    candidates = sorted(
+        candidates,
+        key=lambda q: _score_candidate(q, ipo_symbol),
+        reverse=True,
+    )
 
-    for q in quotes_sorted:
-        sym = q.get("symbol")
-        quote_type = (q.get("quoteType") or "").upper()
+    best = _clean_symbol(candidates[0].get("symbol"))
 
-        if not sym:
-            continue
-
-        # Only accept instruments likely to have daily prices
-        if quote_type in ("EQUITY", "ETF"):
-            return sym
+    # Strong rule: accept exact match only.
+    # This avoids dangerous mismatches like BAO -> BZUN.
+    if best == ipo_symbol:
+        return best
 
     return None
 
@@ -66,8 +170,8 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
     Resolve Yahoo symbols and upsert into raw.symbol_map.
 
     IMPORTANT:
-    raw.symbol_map.vendor_symbol is NOT NULL in your DB.
-    For no-match cases we persist vendor_symbol = ipo_symbol and set is_priceable = false.
+    - raw.symbol_map.vendor_symbol is NOT NULL
+    - for no-match rows, persist vendor_symbol = ipo_symbol and is_priceable = false
     """
     attempted = 0
     priceable = 0
@@ -80,14 +184,15 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
             return
 
         cleaned: list[dict] = []
+
         for r in buffer:
-            ipo_sym = (r.get("ipo_symbol") or "").strip().upper()
-            vendor_sym = (r.get("vendor_symbol") or "").strip().upper()
+            ipo_sym = _clean_symbol(r.get("ipo_symbol"))
+            vendor_sym = _clean_symbol(r.get("vendor_symbol"))
 
             if not ipo_sym:
                 continue
 
-            # satisfy NOT NULL vendor_symbol constraint
+            # satisfy NOT NULL constraint
             if not vendor_sym:
                 vendor_sym = ipo_sym
                 r["vendor_symbol"] = vendor_sym
@@ -111,6 +216,7 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
 
     for sym in ipo_symbols:
         attempted += 1
+        sym = _clean_symbol(sym)
 
         try:
             yahoo_sym = best_yahoo_symbol_for_ipo_symbol(sym)
@@ -121,7 +227,7 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
                         "ipo_symbol": sym,
                         "vendor_symbol": yahoo_sym,
                         "is_priceable": True,
-                        "notes": "yahoo_search:match",
+                        "notes": "yahoo_search:exact_us_match",
                     }
                 )
                 priceable += 1
@@ -129,7 +235,7 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
                 buffer.append(
                     {
                         "ipo_symbol": sym,
-                        "vendor_symbol": sym,   # <- never NULL
+                        "vendor_symbol": sym,   # never NULL
                         "is_priceable": False,
                         "notes": "yahoo_search:no_match",
                     }
@@ -140,7 +246,7 @@ def resolve_yahoo_and_upsert(conn, ipo_symbols: list[str], sleep_s: float = 0.8)
             buffer.append(
                 {
                     "ipo_symbol": sym,
-                    "vendor_symbol": sym,   # <- never NULL
+                    "vendor_symbol": sym,   # never NULL
                     "is_priceable": False,
                     "notes": f"yahoo_search:error:{str(e)[:200]}",
                 }
