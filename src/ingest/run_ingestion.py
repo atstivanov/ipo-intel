@@ -194,6 +194,7 @@ def fetch_priceable_pairs_recent(conn, vendor: str, recent_days: int, limit_n: i
             WHERE m.is_priceable = true
               AND m.vendor_symbol IS NOT NULL
               AND e.ipo_date IS NOT NULL
+              AND e.ipo_date <= CURRENT_DATE
               AND upper(e.symbol) ~ '^[A-Z0-9]{1,5}$'
               AND upper(e.symbol) !~ '.*(U|W|R)$'
               AND e.ipo_date >= (CURRENT_DATE - (%s || ' days')::interval)
@@ -334,6 +335,11 @@ def main():
             attempted += 1
             price_from = ipo_dt
             price_to = min(ipo_dt + timedelta(days=PRICE_WINDOW_DAYS), today)
+
+            #SKIP IPOs that have not happened yet
+            if price_from > price_to:
+                no_data += 1
+                continue
 
             inserted_total_for_ipo = 0
 
