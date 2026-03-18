@@ -160,3 +160,9 @@
 [2026-03-18T17:14:19.082+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:14:19.081+0100] {workday.py:41} WARNING - Could not import pandas. Holidays will not be considered.
 [2026-03-18T17:14:19.082+0100] {processor.py:927} WARNING - No viable dags retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py
 [2026-03-18T17:14:19.157+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py took 0.084 seconds
+[2026-03-18T17:16:22.722+0100] {processor.py:186} INFO - Started process (PID=61768) to work on /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py
+[2026-03-18T17:16:22.723+0100] {processor.py:914} INFO - Processing file /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py for tasks to queue
+[2026-03-18T17:16:22.724+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:22.724+0100] {dagbag.py:588} INFO - Filling up the DagBag from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py
+[2026-03-18T17:16:22.726+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:22.726+0100] {workday.py:41} WARNING - Could not import pandas. Holidays will not be considered.
+[2026-03-18T17:16:22.726+0100] {processor.py:927} WARNING - No viable dags retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py
+[2026-03-18T17:16:22.800+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/plugins/workday.py took 0.082 seconds

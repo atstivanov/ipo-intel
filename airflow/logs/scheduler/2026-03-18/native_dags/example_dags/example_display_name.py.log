@@ -97,3 +97,10 @@
 [2026-03-18T17:11:59.365+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:59.364+0100] {dag.py:3239} INFO - Sync 1 DAGs
 [2026-03-18T17:11:59.422+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:59.422+0100] {dag.py:4180} INFO - Setting next_dagrun for example_display_name to None, run_after=None
 [2026-03-18T17:11:59.440+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py took 0.185 seconds
+[2026-03-18T17:16:09.881+0100] {processor.py:186} INFO - Started process (PID=61715) to work on /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py
+[2026-03-18T17:16:09.882+0100] {processor.py:914} INFO - Processing file /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py for tasks to queue
+[2026-03-18T17:16:09.883+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:09.883+0100] {dagbag.py:588} INFO - Filling up the DagBag from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py
+[2026-03-18T17:16:09.920+0100] {processor.py:925} INFO - DAG(s) 'example_display_name' retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py
+[2026-03-18T17:16:10.001+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:10.000+0100] {dag.py:3239} INFO - Sync 1 DAGs
+[2026-03-18T17:16:10.063+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:10.062+0100] {dag.py:4180} INFO - Setting next_dagrun for example_display_name to None, run_after=None
+[2026-03-18T17:16:10.080+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_display_name.py took 0.204 seconds

@@ -195,3 +195,10 @@
 [2026-03-18T17:14:14.813+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:14:14.813+0100] {dag.py:3239} INFO - Sync 1 DAGs
 [2026-03-18T17:14:14.830+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:14:14.829+0100] {dag.py:4180} INFO - Setting next_dagrun for ipo_pipeline_daily to 2026-03-18 08:00:00+00:00, run_after=2026-03-19 08:00:00+00:00
 [2026-03-18T17:14:14.848+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py took 0.141 seconds
+[2026-03-18T17:16:18.389+0100] {processor.py:186} INFO - Started process (PID=61749) to work on /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py
+[2026-03-18T17:16:18.390+0100] {processor.py:914} INFO - Processing file /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py for tasks to queue
+[2026-03-18T17:16:18.390+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:18.390+0100] {dagbag.py:588} INFO - Filling up the DagBag from /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py
+[2026-03-18T17:16:18.398+0100] {processor.py:925} INFO - DAG(s) 'ipo_pipeline_daily' retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py
+[2026-03-18T17:16:18.484+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:18.484+0100] {dag.py:3239} INFO - Sync 1 DAGs
+[2026-03-18T17:16:18.499+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:18.499+0100] {dag.py:4180} INFO - Setting next_dagrun for ipo_pipeline_daily to 2026-03-18 08:00:00+00:00, run_after=2026-03-19 08:00:00+00:00
+[2026-03-18T17:16:18.513+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/airflow/dags/ipo_pipeline_dag.py took 0.130 seconds

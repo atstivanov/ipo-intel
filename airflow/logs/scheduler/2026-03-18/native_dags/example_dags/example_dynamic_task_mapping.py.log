@@ -97,3 +97,10 @@
 [2026-03-18T17:11:56.752+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:56.752+0100] {dag.py:3239} INFO - Sync 1 DAGs
 [2026-03-18T17:11:56.809+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:56.809+0100] {dag.py:4180} INFO - Setting next_dagrun for example_dynamic_task_mapping to None, run_after=None
 [2026-03-18T17:11:56.826+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py took 0.189 seconds
+[2026-03-18T17:16:07.088+0100] {processor.py:186} INFO - Started process (PID=61698) to work on /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py
+[2026-03-18T17:16:07.089+0100] {processor.py:914} INFO - Processing file /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py for tasks to queue
+[2026-03-18T17:16:07.090+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:07.089+0100] {dagbag.py:588} INFO - Filling up the DagBag from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py
+[2026-03-18T17:16:07.123+0100] {processor.py:925} INFO - DAG(s) 'example_dynamic_task_mapping' retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py
+[2026-03-18T17:16:07.208+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:07.208+0100] {dag.py:3239} INFO - Sync 1 DAGs
+[2026-03-18T17:16:07.280+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:16:07.280+0100] {dag.py:4180} INFO - Setting next_dagrun for example_dynamic_task_mapping to None, run_after=None
+[2026-03-18T17:16:07.298+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_dynamic_task_mapping.py took 0.215 seconds

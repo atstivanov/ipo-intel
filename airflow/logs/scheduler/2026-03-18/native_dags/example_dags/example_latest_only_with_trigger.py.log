@@ -104,3 +104,10 @@
 [2026-03-18T17:11:41.395+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:41.395+0100] {dag.py:3239} INFO - Sync 1 DAGs
 [2026-03-18T17:11:41.407+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:11:41.407+0100] {dag.py:4180} INFO - Setting next_dagrun for latest_only_with_trigger to 2026-03-18 12:00:00+00:00, run_after=2026-03-18 16:00:00+00:00
 [2026-03-18T17:11:41.423+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py took 0.120 seconds
+[2026-03-18T17:15:51.100+0100] {processor.py:186} INFO - Started process (PID=61405) to work on /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py
+[2026-03-18T17:15:51.101+0100] {processor.py:914} INFO - Processing file /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py for tasks to queue
+[2026-03-18T17:15:51.102+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:15:51.102+0100] {dagbag.py:588} INFO - Filling up the DagBag from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py
+[2026-03-18T17:15:51.109+0100] {processor.py:925} INFO - DAG(s) 'latest_only_with_trigger' retrieved from /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py
+[2026-03-18T17:15:51.196+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:15:51.195+0100] {dag.py:3239} INFO - Sync 1 DAGs
+[2026-03-18T17:15:51.209+0100] {logging_mixin.py:190} INFO - [2026-03-18T17:15:51.209+0100] {dag.py:4180} INFO - Setting next_dagrun for latest_only_with_trigger to 2026-03-18 12:00:00+00:00, run_after=2026-03-18 16:00:00+00:00
+[2026-03-18T17:15:51.223+0100] {processor.py:208} INFO - Processing /Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/example_dags/example_latest_only_with_trigger.py took 0.129 seconds
