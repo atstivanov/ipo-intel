@@ -1,78 +1,137 @@
-# IPO Intel - Finnhub + Alpha Vantage + Postgres + dbt + Metabase
+# IPO Intel - End-to-End IPO Analytics Pipeline
 
 ## Overview
-IPO Intel ingests IPO events and daily prices into Postgres, builds analytics marts with dbt, and supports dashboards in Metabase or Streamlit.
+IPO Intel is an end-to-end data pipeline and analytics project that ingests IPO events and stock prices, transforms them with dbt, and serves insights via dashboards.
 
-Core tables:
-- Raw ingestion:
-  - `raw.ipo_events` (Finnhub IPO calendar)
-  - `raw.daily_prices` (Alpha Vantage daily OHLCV)
-- dbt models:
-  - `analytics_staging.stg_ipos_recent`
-  - `analytics_staging.stg_prices_ipo_window_100d`
-  - `analytics_analytics.ipo_metrics_100d`
-  - `analytics_analytics.industry_benchmarks_100d`
+The pipeline integrates:
+- Finnhub (IPO calendar + company profiles)
+- Yahoo Finance / Alpha Vantage (prices + symbol resolution)
+- PostgreSQL (data warehouse)
+- dbt (transformations)
+- Streamlit + Metabase (analytics layer)
+- Airflow (orchestration)
 
-## Prerequisites
-- Docker + Docker Compose (for Postgres + Metabase)
-- Python 3.11+ (for ingestion/dbt/Streamlit)
+---
 
-## Quickstart (Docker + local ingestion)
-1) Create `.env` from the template and add your API keys:
-```bash
-cp .env.example .env
-```
-Set at least:
-- `FINNHUB_API_KEY`
-- `ALPHAVANTAGE_API_KEY`
+## 🎯 Project Objective
 
-If you use Docker Compose for Postgres, set `PG_PORT=5433` in `.env` (host port mapping is `5433 -> 5432`).
+The original goal was to analyze IPO performance over a **100-day post-listing window**.
 
-2) Start Postgres + Metabase:
-```bash
-docker compose up -d
-```
+However, due to:
+- incomplete price coverage
+- symbol resolution issues
+- API limitations
 
-3) Install Python dependencies:
-```bash
-python -m venv .venv
+👉 the project evolved to a **30-day post-IPO analysis framework with coverage-aware logic**.
+
+---
+
+## 📊 Final Analytical Approach
+
+IPO coverage is classified based on available trading days in the first 30 days:
+
+- **Good coverage** → ≥ 15 days
+- **Partial coverage** → 7–14 days
+- **Low coverage** → 1–6 days
+- **No data** → 0 days
+
+This ensures:
+- consistent comparisons
+- realistic benchmarks
+- transparent data quality
+
+---
+
+## 🏗️ Architecture Overview
+
+```text
+APIs (Finnhub, Yahoo, Alpha Vantage)
+        ↓
+Python Ingestion Layer
+        ↓
+PostgreSQL (raw layer)
+        ↓
+dbt (staging + marts)
+        ↓
+Streamlit / Metabase (analytics)
+        ↓
+Airflow (orchestration)
+
+
+## 🚀 Run the Full Pipeline
+
+# --- 1. Go to project ---
+cd ipo-intel
+
+# --- 2. Create environment (first time only) ---
+python3.11 -m venv .venv
 source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
-```
 
-4) Run ingestion (IPO events, profiles, symbols, prices):
-```bash
+# --- 3. Load environment variables ---
+set -a
+source .env
+set +a
+export PYTHONPATH="$(pwd)"
+
+# --- 4. Start infrastructure ---
+docker compose up -d
+
+# --- 5. Run ingestion (IPOs + profiles + prices) ---
 python -m src.ingest.run_ingestion
-```
 
-5) Build dbt models:
-```bash
-dbt deps --project-dir dbt
-dbt run --project-dir dbt --profiles-dir dbt
-```
+# --- 6. Backfill missing prices ---
+python -m src.ingest.run_price_backfill
 
-6) Optional: run the Streamlit dashboard:
-```bash
-pip install streamlit sqlalchemy psycopg2-binary
-streamlit run app.py
-```
+# --- 7. Run dbt transformations ---
+cd dbt
+dbt run
+dbt test
+cd ..
 
-## Metabase
-Open `http://localhost:3000` and add the Postgres database:
-- Host: `localhost`
-- Port: `5433` (Docker default)
-- Database: `ipo`
-- Username/password: from `.env`
+# --- 8. Launch dashboard ---
+streamlit run streamlit_app.py
 
-## Configuration knobs
-Ingestion is controlled via environment variables (defaults shown in code):
-- `IPO_BACKFILL_START_YEAR`, `IPO_BACKFILL_END_YEAR`
-- `IPO_RECENT_DAYS`, `IPO_PRICE_WINDOW_DAYS`
-- `FINNHUB_PROFILE_MAX_PER_RUN`, `FINNHUB_PROFILE_SLEEP_SECONDS`
-- `ALPHAVANTAGE_MAX_RESOLVE_PER_RUN`, `ALPHAVANTAGE_RESOLVE_SLEEP_SECONDS`
-- `ALPHAVANTAGE_MAX_TICKERS_PER_RUN`, `ALPHAVANTAGE_SLEEP_SECONDS`
-- `PRICE_INCREMENTAL`
+📊 Open dashboards
 
-## Notes
-- Free API tiers are rate-limited. If ingestion stops early, rerun later or increase sleep settings.
-- The Docker Compose database is initialized via `sql/init_db.sql`. If you change schema, recreate the volume or apply migrations manually.
+Streamlit → http://localhost:8501
+
+Metabase → http://localhost:3000
+
+📊 Open dashboards
+
+Streamlit → http://localhost:8501
+
+Metabase → http://localhost:3000
+
+# --- 1. Create Airflow env (first time only) ---
+python3.11 -m venv .venv_airflow
+source .venv_airflow/bin/activate
+
+pip install "apache-airflow==2.10.5" \
+  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.11.txt"
+
+# --- 2. Initialize Airflow ---
+export AIRFLOW_HOME="$(pwd)/airflow"
+airflow db init
+
+airflow users create \
+  --username admin \
+  --firstname admin \
+  --lastname admin \
+  --role Admin \
+  --email admin@example.com \
+  --password admin
+
+# --- 3. Start Airflow ---
+airflow webserver --port 8080 &
+airflow scheduler
+
+🌐 Airflow UI
+
+Open in browser: http://localhost:8080
+
+Then:
+Enable DAG: ipo_pipeline_daily
+Click Trigger DAG
