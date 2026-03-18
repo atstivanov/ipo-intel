@@ -58,7 +58,7 @@ Streamlit / Metabase (analytics)
 Airflow (orchestration)
 
 
-## 🚀 Run the Full Pipeline
+🚀 Run the Full Pipeline
 
 # --- 1. Go to project ---
 cd ipo-intel
