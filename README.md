@@ -42,9 +42,7 @@ This ensures:
 
 ---
 
-## 🏗️ Architecture Overview
-
-```text
+🏗️ Architecture Overview
 APIs (Finnhub, Yahoo, Alpha Vantage)
         ↓
 Python Ingestion Layer
@@ -56,82 +54,56 @@ dbt (staging + marts)
 Streamlit / Metabase (analytics)
         ↓
 Airflow (orchestration)
-
-
 🚀 Run the Full Pipeline
-
-# --- 1. Go to project ---
+1. Setup & environment
 cd ipo-intel
 
-# --- 2. Create environment (first time only) ---
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
-
-# --- 3. Load environment variables ---
+2. Load environment variables
 set -a
 source .env
 set +a
 export PYTHONPATH="$(pwd)"
-
-# --- 4. Start infrastructure ---
+3. Start infrastructure
 docker compose up -d
-
-# --- 5. Run ingestion (IPOs + profiles + prices) ---
+4. Run ingestion
 python -m src.ingest.run_ingestion
-
-# --- 6. Backfill missing prices ---
+5. Backfill prices
 python -m src.ingest.run_price_backfill
-
-# --- 7. Run dbt transformations ---
+6. Run dbt
 cd dbt
 dbt run
 dbt test
 cd ..
-
-# --- 8. Launch dashboard ---
+7. Launch dashboard
 streamlit run streamlit_app.py
-
 📊 Open dashboards
 
 Streamlit → http://localhost:8501
 
 Metabase → http://localhost:3000
 
-📊 Open dashboards
+🔁 Run with Airflow (Optional)
+Start Airflow
 
-Streamlit → http://localhost:8501
+Terminal 1:
 
-Metabase → http://localhost:3000
-
-# --- 1. Create Airflow env (first time only) ---
-python3.11 -m venv .venv_airflow
 source .venv_airflow/bin/activate
-
-pip install "apache-airflow==2.10.5" \
-  --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.5/constraints-3.11.txt"
-
-# --- 2. Initialize Airflow ---
 export AIRFLOW_HOME="$(pwd)/airflow"
-airflow db init
+airflow webserver --port 8080
 
-airflow users create \
-  --username admin \
-  --firstname admin \
-  --lastname admin \
-  --role Admin \
-  --email admin@example.com \
-  --password admin
+Terminal 2:
 
-# --- 3. Start Airflow ---
-airflow webserver --port 8080 &
+source .venv_airflow/bin/activate
+export AIRFLOW_HOME="$(pwd)/airflow"
 airflow scheduler
+Open UI
 
-🌐 Airflow UI
+http://localhost:8080
 
-Open in browser: http://localhost:8080
-
-Then:
 Enable DAG: ipo_pipeline_daily
+
 Click Trigger DAG
