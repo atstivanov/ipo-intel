@@ -3,76 +3,181 @@ version: 2
 sources:
   - name: raw
     schema: raw
+    description: "Raw ingestion layer containing IPO events, price history, symbol mappings, company enrichment, and ingestion audit logs."
     tables:
       - name: ipo_events
-        description: "Raw IPO events ingested from Finnhub"
+        description: "Raw IPO events ingested from Finnhub. Each row represents an IPO event captured from the source feed."
 
       - name: daily_prices
-        description: "Raw daily prices ingested from Alpha Vantage (and potentially other sources later)"
+        description: "Raw daily market prices ingested from Alpha Vantage and other providers over time. Stores vendor-level price history before staging and normalization."
 
       - name: symbol_map
-        description: "Mapping between Finnhub IPO symbols and vendor-specific pricing symbols"
+        description: "Mapping table between IPO symbols from Finnhub and pricing-provider-specific symbols used for downstream market data retrieval."
 
       - name: company_profiles
-        description: "Company profile enrichment from Finnhub (industry, exchange, etc.)"
+        description: "Company profile enrichment from Finnhub, including attributes such as industry, sector, and exchange."
 
       - name: ingestion_runs
-        description: "Run log for ingestion executions"
+        description: "Audit log for ingestion executions, used to track pipeline runs, status, and operational metadata."
 
 models:
   - name: stg_ipos_recent
-    description: "Recent IPO events with symbol mapping and preferred company profile (finnhub -> yahoo)"
+    description: "Recent IPO events enriched with resolved pricing symbols and preferred company profile attributes, used as the primary IPO reference dataset for analytics."
     columns:
       - name: event_id
-        tests: [not_null, unique]
+        description: "Unique identifier for each IPO event."
+        tests:
+          - not_null
+          - unique
 
       - name: ipo_date
-        tests: [not_null]
+        description: "IPO listing date for the event."
+        tests:
+          - not_null
 
       - name: ipo_symbol
-        tests: [not_null]
+        description: "Original IPO symbol from the source IPO feed."
+        tests:
+          - not_null
 
       - name: price_symbol
+        description: "Resolved symbol used to retrieve market-price data from the selected pricing provider."
         tests:
           - not_null:
               config:
                 severity: warn
 
       - name: industry
+        description: "Industry classification for the IPO company, typically sourced from company profile enrichment."
         tests:
           - not_null:
               config:
                 severity: warn
 
       - name: sector
+        description: "Sector classification for the IPO company, typically sourced from company profile enrichment."
         tests:
           - not_null:
               config:
                 severity: warn
 
-  - name: stg_prices_ipo_window_100d
-    description: "Daily prices aligned to IPO date for 0..N day window; prefers alphavantage then yahoo"
+  - name: stg_prices_ipo_window_30d
+    description: "Daily price observations restricted to the first 30 days after each IPO date. This model is the main input for short-term post-IPO analysis."
     columns:
       - name: event_id
-        tests: [not_null]
+        description: "Identifier linking each price record back to its IPO event."
+        tests:
+          - not_null
 
+      - name: ipo_date
+        description: "IPO date associated with the price observation."
+      
       - name: price_date
-        tests: [not_null]
+        description: "Trading date for the price observation within the 30-day IPO analysis window."
+        tests:
+          - not_null
 
       - name: close
+        description: "Closing price for the given trading day."
         tests:
-          - not_null:
-              config:
-                severity: warn
+          - not_null
 
       - name: price_source
-        tests: [not_null]
+        description: "Source provider used to retrieve the price observation, such as Yahoo or Alpha Vantage."
+        tests:
+          - not_null
 
-  - name: ipo_metrics_100d
-    description: "Per-IPO metrics over first 100 trading days"
+  - name: ipo_metrics_30d
+    description: "IPO-level 30-day performance and coverage model. Aggregates price history into analytical metrics such as available price days, first and last close, 30-day return, and coverage classification."
     columns:
       - name: event_id
-        tests: [not_null, unique]
-        
+        description: "Unique IPO event identifier."
+        tests:
+          - not_null
+          - unique
+
       - name: ipo_date
-        tests: [not_null]
+        description: "IPO listing date for the event."
+        tests:
+          - not_null
+
+      - name: ipo_symbol
+        description: "Original IPO symbol from the source feed."
+
+      - name: price_symbol
+        description: "Resolved market-data symbol used for pricing retrieval."
+
+      - name: industry
+        description: "Industry classification used for segmentation and benchmarking."
+
+      - name: sector
+        description: "Sector classification used for segmentation and benchmarking."
+
+      - name: price_days
+        description: "Number of distinct trading days with retrieved prices in the first 30 days after IPO."
+
+      - name: first_price_date
+        description: "Earliest retrieved price date in the 30-day post-IPO window."
+
+      - name: last_price_date
+        description: "Latest retrieved price date in the 30-day post-IPO window."
+
+      - name: first_close_30d
+        description: "First available closing price in the 30-day analysis window."
+
+      - name: last_close_30d
+        description: "Last available closing price in the 30-day analysis window."
+
+      - name: avg_close_30d
+        description: "Average closing price across all available observations in the 30-day window."
+
+      - name: min_close_30d
+        description: "Minimum closing price observed in the 30-day window."
+
+      - name: max_close_30d
+        description: "Maximum closing price observed in the 30-day window."
+
+      - name: return_30d_pct
+        description: "Percentage return between the first available close and last available close in the 30-day post-IPO window."
+
+      - name: coverage_status_30d
+        description: "Coverage classification for the IPO based on the number of retrieved price days in the 30-day window."
+        tests:
+          - not_null
+
+  - name: ipo_coverage_summary_30d
+    description: "Summary table showing IPO counts by 30-day coverage bucket, along with metadata completeness and average retrieved price days."
+    columns:
+      - name: coverage_status
+        description: "Coverage bucket label for the 30-day analysis window."
+        tests:
+          - not_null
+
+      - name: ipo_count
+        description: "Number of IPOs in the given coverage bucket."
+
+      - name: with_industry
+        description: "Number of IPOs in the bucket with non-null industry classification."
+
+      - name: with_sector
+        description: "Number of IPOs in the bucket with non-null sector classification."
+
+      - name: avg_price_days
+        description: "Average number of retrieved price days for IPOs in the bucket."
+
+  - name: industry_benchmarks_30d
+    description: "Industry-level benchmark table for IPOs with strong 30-day coverage, summarizing average short-term return and average retrieved price days."
+    columns:
+      - name: industry
+        description: "Industry grouping used for benchmark aggregation."
+        tests:
+          - not_null
+
+      - name: ipo_count
+        description: "Number of IPOs included in the industry benchmark."
+
+      - name: avg_return_30d_pct
+        description: "Average 30-day return across IPOs in the industry benchmark."
+
+      - name: avg_price_days
+        description: "Average number of retrieved price days across IPOs in the industry benchmark."
