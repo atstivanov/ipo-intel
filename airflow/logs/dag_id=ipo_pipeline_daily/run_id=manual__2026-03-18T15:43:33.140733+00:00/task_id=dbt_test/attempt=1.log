@@ -1,0 +1,84 @@
+[2026-03-18T16:47:33.507+0100] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-03-18T16:47:33.517+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: ipo_pipeline_daily.dbt_test manual__2026-03-18T15:43:33.140733+00:00 [queued]>
+[2026-03-18T16:47:33.523+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: ipo_pipeline_daily.dbt_test manual__2026-03-18T15:43:33.140733+00:00 [queued]>
+[2026-03-18T16:47:33.523+0100] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-03-18T16:47:33.532+0100] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): dbt_test> on 2026-03-18 15:43:33.140733+00:00
+[2026-03-18T16:47:33.536+0100] {standard_task_runner.py:72} INFO - Started process 53101 to run task
+[2026-03-18T16:47:33.542+0100] {standard_task_runner.py:104} INFO - Running: ['airflow', 'tasks', 'run', 'ipo_pipeline_daily', 'dbt_test', 'manual__2026-03-18T15:43:33.140733+00:00', '--job-id', '9', '--raw', '--subdir', 'DAGS_FOLDER/ipo_pipeline_dag.py', '--cfg-path', '/var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T/tmpsfecg6eb']
+[2026-03-18T16:47:33.544+0100] {standard_task_runner.py:105} INFO - Job 9: Subtask dbt_test
+[2026-03-18T16:47:33.581+0100] {task_command.py:467} INFO - Running <TaskInstance: ipo_pipeline_daily.dbt_test manual__2026-03-18T15:43:33.140733+00:00 [running]> on host atanass-macbook-pro.local
+[2026-03-18T16:47:33.627+0100] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='atanas' AIRFLOW_CTX_DAG_ID='ipo_pipeline_daily' AIRFLOW_CTX_TASK_ID='dbt_test' AIRFLOW_CTX_EXECUTION_DATE='2026-03-18T15:43:33.140733+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-18T15:43:33.140733+00:00'
+[2026-03-18T16:47:33.629+0100] {logging_mixin.py:190} INFO - Task instance is in running state
+[2026-03-18T16:47:33.629+0100] {logging_mixin.py:190} INFO -  Previous state of the Task instance: queued
+[2026-03-18T16:47:33.630+0100] {logging_mixin.py:190} INFO - Current task name:dbt_test state:running start_date:2026-03-18 15:47:33.518026+00:00
+[2026-03-18T16:47:33.630+0100] {logging_mixin.py:190} INFO - Dag name:ipo_pipeline_daily and current dag run status:running
+[2026-03-18T16:47:33.631+0100] {taskinstance.py:732} INFO - ::endgroup::
+[2026-03-18T16:47:33.632+0100] {subprocess.py:78} INFO - Tmp dir root location: /var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T
+[2026-03-18T16:47:33.633+0100] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "bash -lc '\n        cd /Users/atanasivanov/ipo-intel/ipo-intel/dbt &&\n        source /Users/atanasivanov/ipo-intel/ipo-intel/.venv/bin/activate &&\n        set -a &&\n        source /Users/atanasivanov/ipo-intel/ipo-intel/.env &&\n        set +a &&\n        dbt test\n        '"]
+[2026-03-18T16:47:33.639+0100] {subprocess.py:99} INFO - Output:
+[2026-03-18T16:47:35.426+0100] {subprocess.py:106} INFO - [0m15:47:35  Running with dbt=1.11.2
+[2026-03-18T16:47:35.724+0100] {subprocess.py:106} INFO - [0m15:47:35  Registered adapter: postgres=1.10.0
+[2026-03-18T16:47:36.245+0100] {subprocess.py:106} INFO - [0m15:47:36  Found 12 models, 17 data tests, 5 sources, 578 macros
+[2026-03-18T16:47:36.250+0100] {subprocess.py:106} INFO - [0m15:47:36
+[2026-03-18T16:47:36.250+0100] {subprocess.py:106} INFO - [0m15:47:36  Concurrency: 4 threads (target='dev')
+[2026-03-18T16:47:36.251+0100] {subprocess.py:106} INFO - [0m15:47:36
+[2026-03-18T16:47:36.418+0100] {subprocess.py:106} INFO - [0m15:47:36  1 of 17 START test not_null_industry_benchmarks_30d_industry ................... [RUN]
+[2026-03-18T16:47:36.419+0100] {subprocess.py:106} INFO - [0m15:47:36  2 of 17 START test not_null_ipo_coverage_summary_30d_coverage_status ........... [RUN]
+[2026-03-18T16:47:36.419+0100] {subprocess.py:106} INFO - [0m15:47:36  3 of 17 START test not_null_ipo_metrics_30d_coverage_status_30d ................ [RUN]
+[2026-03-18T16:47:36.420+0100] {subprocess.py:106} INFO - [0m15:47:36  4 of 17 START test not_null_ipo_metrics_30d_event_id ........................... [RUN]
+[2026-03-18T16:47:36.539+0100] {subprocess.py:106} INFO - [0m15:47:36  3 of 17 PASS not_null_ipo_metrics_30d_coverage_status_30d ...................... [[32mPASS[0m in 0.12s]
+[2026-03-18T16:47:36.540+0100] {subprocess.py:106} INFO - [0m15:47:36  1 of 17 PASS not_null_industry_benchmarks_30d_industry ......................... [[32mPASS[0m in 0.12s]
+[2026-03-18T16:47:36.542+0100] {subprocess.py:106} INFO - [0m15:47:36  4 of 17 PASS not_null_ipo_metrics_30d_event_id ................................. [[32mPASS[0m in 0.12s]
+[2026-03-18T16:47:36.544+0100] {subprocess.py:106} INFO - [0m15:47:36  2 of 17 PASS not_null_ipo_coverage_summary_30d_coverage_status ................. [[32mPASS[0m in 0.12s]
+[2026-03-18T16:47:36.550+0100] {subprocess.py:106} INFO - [0m15:47:36  5 of 17 START test not_null_ipo_metrics_30d_ipo_date ........................... [RUN]
+[2026-03-18T16:47:36.551+0100] {subprocess.py:106} INFO - [0m15:47:36  6 of 17 START test not_null_stg_ipos_recent_event_id ........................... [RUN]
+[2026-03-18T16:47:36.552+0100] {subprocess.py:106} INFO - [0m15:47:36  7 of 17 START test not_null_stg_ipos_recent_industry ........................... [RUN]
+[2026-03-18T16:47:36.552+0100] {subprocess.py:106} INFO - [0m15:47:36  8 of 17 START test not_null_stg_ipos_recent_ipo_date ........................... [RUN]
+[2026-03-18T16:47:36.622+0100] {subprocess.py:106} INFO - [0m15:47:36  5 of 17 PASS not_null_ipo_metrics_30d_ipo_date ................................. [[32mPASS[0m in 0.07s]
+[2026-03-18T16:47:36.628+0100] {subprocess.py:106} INFO - [0m15:47:36  9 of 17 START test not_null_stg_ipos_recent_ipo_symbol ......................... [RUN]
+[2026-03-18T16:47:36.632+0100] {subprocess.py:106} INFO - [0m15:47:36  8 of 17 PASS not_null_stg_ipos_recent_ipo_date ................................. [[32mPASS[0m in 0.08s]
+[2026-03-18T16:47:36.632+0100] {subprocess.py:106} INFO - [0m15:47:36  6 of 17 PASS not_null_stg_ipos_recent_event_id ................................. [[32mPASS[0m in 0.08s]
+[2026-03-18T16:47:36.642+0100] {subprocess.py:106} INFO - [0m15:47:36  10 of 17 START test not_null_stg_ipos_recent_price_symbol ...................... [RUN]
+[2026-03-18T16:47:36.643+0100] {subprocess.py:106} INFO - [0m15:47:36  11 of 17 START test not_null_stg_ipos_recent_sector ............................ [RUN]
+[2026-03-18T16:47:36.670+0100] {subprocess.py:106} INFO - [0m15:47:36  7 of 17 WARN 31 not_null_stg_ipos_recent_industry .............................. [[33mWARN 31[0m in 0.12s]
+[2026-03-18T16:47:36.676+0100] {subprocess.py:106} INFO - [0m15:47:36  12 of 17 START test not_null_stg_prices_ipo_window_30d_close ................... [RUN]
+[2026-03-18T16:47:36.678+0100] {subprocess.py:106} INFO - [0m15:47:36  9 of 17 PASS not_null_stg_ipos_recent_ipo_symbol ............................... [[32mPASS[0m in 0.05s]
+[2026-03-18T16:47:36.685+0100] {subprocess.py:106} INFO - [0m15:47:36  13 of 17 START test not_null_stg_prices_ipo_window_30d_event_id ................ [RUN]
+[2026-03-18T16:47:36.722+0100] {subprocess.py:106} INFO - [0m15:47:36  10 of 17 PASS not_null_stg_ipos_recent_price_symbol ............................ [[32mPASS[0m in 0.08s]
+[2026-03-18T16:47:36.727+0100] {subprocess.py:106} INFO - [0m15:47:36  13 of 17 PASS not_null_stg_prices_ipo_window_30d_event_id ...................... [[32mPASS[0m in 0.04s]
+[2026-03-18T16:47:36.727+0100] {subprocess.py:106} INFO - [0m15:47:36  14 of 17 START test not_null_stg_prices_ipo_window_30d_price_date .............. [RUN]
+[2026-03-18T16:47:36.730+0100] {subprocess.py:106} INFO - [0m15:47:36  11 of 17 WARN 62 not_null_stg_ipos_recent_sector ............................... [[33mWARN 62[0m in 0.08s]
+[2026-03-18T16:47:36.732+0100] {subprocess.py:106} INFO - [0m15:47:36  15 of 17 START test not_null_stg_prices_ipo_window_30d_price_source ............ [RUN]
+[2026-03-18T16:47:36.738+0100] {subprocess.py:106} INFO - [0m15:47:36  16 of 17 START test unique_ipo_metrics_30d_event_id ............................ [RUN]
+[2026-03-18T16:47:36.783+0100] {subprocess.py:106} INFO - [0m15:47:36  16 of 17 PASS unique_ipo_metrics_30d_event_id .................................. [[32mPASS[0m in 0.04s]
+[2026-03-18T16:47:36.785+0100] {subprocess.py:106} INFO - [0m15:47:36  17 of 17 START test unique_stg_ipos_recent_event_id ............................ [RUN]
+[2026-03-18T16:47:36.848+0100] {subprocess.py:106} INFO - [0m15:47:36  17 of 17 PASS unique_stg_ipos_recent_event_id .................................. [[32mPASS[0m in 0.06s]
+[2026-03-18T16:47:37.303+0100] {subprocess.py:106} INFO - [0m15:47:37  14 of 17 PASS not_null_stg_prices_ipo_window_30d_price_date .................... [[32mPASS[0m in 0.57s]
+[2026-03-18T16:47:37.335+0100] {subprocess.py:106} INFO - [0m15:47:37  12 of 17 PASS not_null_stg_prices_ipo_window_30d_close ......................... [[32mPASS[0m in 0.66s]
+[2026-03-18T16:47:37.411+0100] {subprocess.py:106} INFO - [0m15:47:37  15 of 17 PASS not_null_stg_prices_ipo_window_30d_price_source .................. [[32mPASS[0m in 0.67s]
+[2026-03-18T16:47:37.434+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.435+0100] {subprocess.py:106} INFO - [0m15:47:37  Finished running 17 data tests in 0 hours 0 minutes and 1.18 seconds (1.18s).
+[2026-03-18T16:47:37.488+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.489+0100] {subprocess.py:106} INFO - [0m15:47:37  [33mCompleted with 2 warnings:[0m
+[2026-03-18T16:47:37.490+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.491+0100] {subprocess.py:106} INFO - [0m15:47:37  [33mWarning in test not_null_stg_ipos_recent_industry (models/schema.yml)[0m
+[2026-03-18T16:47:37.491+0100] {subprocess.py:106} INFO - [0m15:47:37  Got 31 results, configured to warn if != 0
+[2026-03-18T16:47:37.492+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.492+0100] {subprocess.py:106} INFO - [0m15:47:37    compiled code at target/compiled/ipo_intel/models/schema.yml/not_null_stg_ipos_recent_industry.sql
+[2026-03-18T16:47:37.493+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.493+0100] {subprocess.py:106} INFO - [0m15:47:37  [33mWarning in test not_null_stg_ipos_recent_sector (models/schema.yml)[0m
+[2026-03-18T16:47:37.494+0100] {subprocess.py:106} INFO - [0m15:47:37  Got 62 results, configured to warn if != 0
+[2026-03-18T16:47:37.494+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.495+0100] {subprocess.py:106} INFO - [0m15:47:37    compiled code at target/compiled/ipo_intel/models/schema.yml/not_null_stg_ipos_recent_sector.sql
+[2026-03-18T16:47:37.495+0100] {subprocess.py:106} INFO - [0m15:47:37
+[2026-03-18T16:47:37.496+0100] {subprocess.py:106} INFO - [0m15:47:37  Done. PASS=15 WARN=2 ERROR=0 SKIP=0 NO-OP=0 TOTAL=17
+[2026-03-18T16:47:38.302+0100] {subprocess.py:110} INFO - Command exited with return code 0
+[2026-03-18T16:47:38.319+0100] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-03-18T16:47:38.320+0100] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=ipo_pipeline_daily, task_id=dbt_test, run_id=manual__2026-03-18T15:43:33.140733+00:00, execution_date=20260318T154333, start_date=20260318T154733, end_date=20260318T154738
+[2026-03-18T16:47:38.332+0100] {logging_mixin.py:190} INFO - Task instance in success state
+[2026-03-18T16:47:38.332+0100] {logging_mixin.py:190} INFO -  Previous state of the Task instance: running
+[2026-03-18T16:47:38.333+0100] {logging_mixin.py:190} INFO - Dag name:ipo_pipeline_daily queued_at:2026-03-18 15:43:33.150447+00:00
+[2026-03-18T16:47:38.334+0100] {logging_mixin.py:190} INFO - Task hostname:atanass-macbook-pro.local operator:BashOperator
+[2026-03-18T16:47:38.344+0100] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2026-03-18T16:47:38.355+0100] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-03-18T16:47:38.356+0100] {local_task_job_runner.py:245} INFO - ::endgroup::

@@ -1,0 +1,136 @@
+[2026-03-18T16:19:30.413+0100] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-03-18T16:19:30.425+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: ipo_pipeline_daily.dbt_run manual__2026-03-18T15:16:23.952036+00:00 [queued]>
+[2026-03-18T16:19:30.432+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: ipo_pipeline_daily.dbt_run manual__2026-03-18T15:16:23.952036+00:00 [queued]>
+[2026-03-18T16:19:30.433+0100] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-03-18T16:19:30.442+0100] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): dbt_run> on 2026-03-18 15:16:23.952036+00:00
+[2026-03-18T16:19:30.446+0100] {standard_task_runner.py:72} INFO - Started process 45122 to run task
+[2026-03-18T16:19:30.452+0100] {standard_task_runner.py:104} INFO - Running: ['airflow', 'tasks', 'run', 'ipo_pipeline_daily', 'dbt_run', 'manual__2026-03-18T15:16:23.952036+00:00', '--job-id', '4', '--raw', '--subdir', 'DAGS_FOLDER/ipo_pipeline_dag.py', '--cfg-path', '/var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T/tmpgdtu85ja']
+[2026-03-18T16:19:30.455+0100] {standard_task_runner.py:105} INFO - Job 4: Subtask dbt_run
+[2026-03-18T16:19:30.493+0100] {task_command.py:467} INFO - Running <TaskInstance: ipo_pipeline_daily.dbt_run manual__2026-03-18T15:16:23.952036+00:00 [running]> on host atanass-macbook-pro.local
+[2026-03-18T16:19:30.544+0100] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='atanas' AIRFLOW_CTX_DAG_ID='ipo_pipeline_daily' AIRFLOW_CTX_TASK_ID='dbt_run' AIRFLOW_CTX_EXECUTION_DATE='2026-03-18T15:16:23.952036+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-18T15:16:23.952036+00:00'
+[2026-03-18T16:19:30.546+0100] {logging_mixin.py:190} INFO - Task instance is in running state
+[2026-03-18T16:19:30.546+0100] {logging_mixin.py:190} INFO -  Previous state of the Task instance: queued
+[2026-03-18T16:19:30.547+0100] {logging_mixin.py:190} INFO - Current task name:dbt_run state:running start_date:2026-03-18 15:19:30.426226+00:00
+[2026-03-18T16:19:30.547+0100] {logging_mixin.py:190} INFO - Dag name:ipo_pipeline_daily and current dag run status:running
+[2026-03-18T16:19:30.548+0100] {taskinstance.py:732} INFO - ::endgroup::
+[2026-03-18T16:19:30.549+0100] {subprocess.py:78} INFO - Tmp dir root location: /var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T
+[2026-03-18T16:19:30.550+0100] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', "bash -lc '\n        cd /Users/atanasivanov/ipo-intel/ipo-intel/dbt &&\n        source /Users/atanasivanov/ipo-intel/ipo-intel/.venv/bin/activate &&\n        set -a &&\n        source /Users/atanasivanov/ipo-intel/ipo-intel/.env &&\n        set +a &&\n        dbt run\n        '"]
+[2026-03-18T16:19:30.556+0100] {subprocess.py:99} INFO - Output:
+[2026-03-18T16:19:33.875+0100] {subprocess.py:106} INFO - Traceback (most recent call last):
+[2026-03-18T16:19:33.876+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/bin/dbt", line 5, in <module>
+[2026-03-18T16:19:33.876+0100] {subprocess.py:106} INFO -     from dbt.cli.main import cli
+[2026-03-18T16:19:33.877+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/cli/__init__.py", line 1, in <module>
+[2026-03-18T16:19:33.877+0100] {subprocess.py:106} INFO -     from .main import cli as dbt_cli  # noqa
+[2026-03-18T16:19:33.877+0100] {subprocess.py:106} INFO -     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-03-18T16:19:33.878+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/cli/main.py", line 13, in <module>
+[2026-03-18T16:19:33.878+0100] {subprocess.py:106} INFO -     from dbt.artifacts.schemas.run import RunExecutionResult
+[2026-03-18T16:19:33.879+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/artifacts/schemas/run/__init__.py", line 2, in <module>
+[2026-03-18T16:19:33.879+0100] {subprocess.py:106} INFO -     from dbt.artifacts.schemas.run.v5.run import *  # noqa
+[2026-03-18T16:19:33.880+0100] {subprocess.py:106} INFO -     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[2026-03-18T16:19:33.880+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/artifacts/schemas/run/v5/run.py", line 15, in <module>
+[2026-03-18T16:19:33.880+0100] {subprocess.py:106} INFO -     from dbt.artifacts.resources import CompiledResource
+[2026-03-18T16:19:33.881+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/artifacts/resources/__init__.py", line 49, in <module>
+[2026-03-18T16:19:33.881+0100] {subprocess.py:106} INFO -     from dbt.artifacts.resources.v1.metric import (
+[2026-03-18T16:19:33.882+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/artifacts/resources/v1/metric.py", line 8, in <module>
+[2026-03-18T16:19:33.882+0100] {subprocess.py:106} INFO -     from dbt.artifacts.resources.v1.semantic_layer_components import (
+[2026-03-18T16:19:33.883+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt/artifacts/resources/v1/semantic_layer_components.py", line 5, in <module>
+[2026-03-18T16:19:33.883+0100] {subprocess.py:106} INFO -     from dbt_semantic_interfaces.call_parameter_sets import JinjaCallParameterSets
+[2026-03-18T16:19:33.883+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt_semantic_interfaces/call_parameter_sets.py", line 6, in <module>
+[2026-03-18T16:19:33.884+0100] {subprocess.py:106} INFO -     from dbt_semantic_interfaces.references import (
+[2026-03-18T16:19:33.884+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt_semantic_interfaces/references.py", line 5, in <module>
+[2026-03-18T16:19:33.885+0100] {subprocess.py:106} INFO -     from dbt_semantic_interfaces.dataclass_serialization import SerializableDataclass
+[2026-03-18T16:19:33.885+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt_semantic_interfaces/dataclass_serialization.py", line 29, in <module>
+[2026-03-18T16:19:33.886+0100] {subprocess.py:106} INFO -     from dbt_semantic_interfaces.pretty_print import pformat_big_objects
+[2026-03-18T16:19:33.886+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt_semantic_interfaces/pretty_print.py", line 8, in <module>
+[2026-03-18T16:19:33.887+0100] {subprocess.py:106} INFO -     from dbt_semantic_interfaces.implementations.base import HashableBaseModel
+[2026-03-18T16:19:33.887+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dbt_semantic_interfaces/implementations/base.py", line 13, in <module>
+[2026-03-18T16:19:33.887+0100] {subprocess.py:106} INFO -     from dsi_pydantic_shim import BaseModel, root_validator
+[2026-03-18T16:19:33.888+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/dsi_pydantic_shim.py", line 27, in <module>
+[2026-03-18T16:19:33.888+0100] {subprocess.py:106} INFO -     from pydantic.v1 import (  # type: ignore  # noqa
+[2026-03-18T16:19:33.889+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/pydantic/__init__.py", line 5, in <module>
+[2026-03-18T16:19:33.889+0100] {subprocess.py:106} INFO -     from ._migration import getattr_migration
+[2026-03-18T16:19:33.890+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/pydantic/_migration.py", line 4, in <module>
+[2026-03-18T16:19:33.891+0100] {subprocess.py:106} INFO -     from pydantic.warnings import PydanticDeprecatedSince20
+[2026-03-18T16:19:33.891+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/pydantic/warnings.py", line 5, in <module>
+[2026-03-18T16:19:33.892+0100] {subprocess.py:106} INFO -     from .version import version_short
+[2026-03-18T16:19:33.892+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/pydantic/version.py", line 7, in <module>
+[2026-03-18T16:19:33.893+0100] {subprocess.py:106} INFO -     from pydantic_core import __version__ as __pydantic_core_version__
+[2026-03-18T16:19:33.893+0100] {subprocess.py:106} INFO -   File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/pydantic_core/__init__.py", line 6, in <module>
+[2026-03-18T16:19:33.893+0100] {subprocess.py:106} INFO -     from typing_extensions import Sentinel
+[2026-03-18T16:19:33.894+0100] {subprocess.py:106} INFO - ImportError: cannot import name 'Sentinel' from 'typing_extensions' (/Users/atanasivanov/ipo-intel/ipo-intel/.venv/lib/python3.11/site-packages/typing_extensions.py)
+[2026-03-18T16:19:33.973+0100] {subprocess.py:110} INFO - Command exited with return code 1
+[2026-03-18T16:19:33.981+0100] {taskinstance.py:3313} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 768, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-03-18T16:19:33.988+0100] {logging_mixin.py:190} INFO - Task instance in failure state
+[2026-03-18T16:19:33.988+0100] {logging_mixin.py:190} INFO - Task start:2026-03-18 15:19:30.426226+00:00 end:2026-03-18 15:19:33.987713+00:00 duration:3.561487
+[2026-03-18T16:19:33.989+0100] {logging_mixin.py:190} INFO - Task:<Task(BashOperator): dbt_run> dag:<DAG: ipo_pipeline_daily> dagrun:<DagRun ipo_pipeline_daily @ 2026-03-18 15:16:23.952036+00:00: manual__2026-03-18T15:16:23.952036+00:00, state:running, queued_at: 2026-03-18 15:16:23.982449+00:00. externally triggered: True>
+[2026-03-18T16:19:33.990+0100] {logging_mixin.py:190} INFO - Failure caused by Bash command failed. The command returned a non-zero exit code 1.
+[2026-03-18T16:19:33.991+0100] {taskinstance.py:1226} INFO - Marking task as UP_FOR_RETRY. dag_id=ipo_pipeline_daily, task_id=dbt_run, run_id=manual__2026-03-18T15:16:23.952036+00:00, execution_date=20260318T151623, start_date=20260318T151930, end_date=20260318T151933
+[2026-03-18T16:19:34.007+0100] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-03-18T16:19:34.008+0100] {standard_task_runner.py:124} ERROR - Failed to execute job 4 for task dbt_run (Bash command failed. The command returned a non-zero exit code 1.; 45122)
+Traceback (most recent call last):
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/task/task_runner/standard_task_runner.py", line 117, in _start_by_fork
+    ret = args.func(args, dag=self.dag)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/cli/cli_config.py", line 49, in command
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/utils/cli.py", line 116, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/cli/commands/task_command.py", line 483, in task_run
+    task_return_code = _run_task_by_selected_method(args, _dag, ti)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/cli/commands/task_command.py", line 256, in _run_task_by_selected_method
+    return _run_raw_task(args, ti)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/cli/commands/task_command.py", line 341, in _run_raw_task
+    return ti._run_raw_task(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/utils/session.py", line 97, in wrapper
+    return func(*args, session=session, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 3006, in _run_raw_task
+    return _run_raw_task(
+           ^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 274, in _run_raw_task
+    TaskInstance._execute_task_with_callbacks(
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 3161, in _execute_task_with_callbacks
+    result = self._execute_task(context, task_orig)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 3185, in _execute_task
+    return _execute_task(self, context, task_orig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 768, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/taskinstance.py", line 734, in _execute_callable
+    return ExecutionCallableRunner(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/utils/operator_helpers.py", line 252, in run
+    return self.func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/models/baseoperator.py", line 424, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/atanasivanov/ipo-intel/ipo-intel/.venv_airflow/lib/python3.11/site-packages/airflow/operators/bash.py", line 276, in execute
+    raise AirflowException(
+airflow.exceptions.AirflowException: Bash command failed. The command returned a non-zero exit code 1.
+[2026-03-18T16:19:34.026+0100] {local_task_job_runner.py:266} INFO - Task exited with return code 1
+[2026-03-18T16:19:34.041+0100] {taskinstance.py:3901} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-03-18T16:19:34.042+0100] {local_task_job_runner.py:245} INFO - ::endgroup::

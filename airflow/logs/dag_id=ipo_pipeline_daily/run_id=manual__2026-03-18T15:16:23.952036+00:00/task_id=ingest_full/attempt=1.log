@@ -1,0 +1,50 @@
+[2026-03-18T16:16:26.995+0100] {local_task_job_runner.py:123} INFO - ::group::Pre task execution logs
+[2026-03-18T16:16:27.005+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: ipo_pipeline_daily.ingest_full manual__2026-03-18T15:16:23.952036+00:00 [queued]>
+[2026-03-18T16:16:27.010+0100] {taskinstance.py:2614} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: ipo_pipeline_daily.ingest_full manual__2026-03-18T15:16:23.952036+00:00 [queued]>
+[2026-03-18T16:16:27.010+0100] {taskinstance.py:2867} INFO - Starting attempt 1 of 2
+[2026-03-18T16:16:27.020+0100] {taskinstance.py:2890} INFO - Executing <Task(BashOperator): ingest_full> on 2026-03-18 15:16:23.952036+00:00
+[2026-03-18T16:16:27.025+0100] {standard_task_runner.py:72} INFO - Started process 44533 to run task
+[2026-03-18T16:16:27.032+0100] {standard_task_runner.py:104} INFO - Running: ['airflow', 'tasks', 'run', 'ipo_pipeline_daily', 'ingest_full', 'manual__2026-03-18T15:16:23.952036+00:00', '--job-id', '2', '--raw', '--subdir', 'DAGS_FOLDER/ipo_pipeline_dag.py', '--cfg-path', '/var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T/tmpnq9c720n']
+[2026-03-18T16:16:27.034+0100] {standard_task_runner.py:105} INFO - Job 2: Subtask ingest_full
+[2026-03-18T16:16:27.075+0100] {task_command.py:467} INFO - Running <TaskInstance: ipo_pipeline_daily.ingest_full manual__2026-03-18T15:16:23.952036+00:00 [running]> on host atanass-macbook-pro.local
+[2026-03-18T16:16:27.126+0100] {taskinstance.py:3134} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='atanas' AIRFLOW_CTX_DAG_ID='ipo_pipeline_daily' AIRFLOW_CTX_TASK_ID='ingest_full' AIRFLOW_CTX_EXECUTION_DATE='2026-03-18T15:16:23.952036+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-03-18T15:16:23.952036+00:00'
+[2026-03-18T16:16:27.127+0100] {logging_mixin.py:190} INFO - Task instance is in running state
+[2026-03-18T16:16:27.128+0100] {logging_mixin.py:190} INFO -  Previous state of the Task instance: queued
+[2026-03-18T16:16:27.128+0100] {logging_mixin.py:190} INFO - Current task name:ingest_full state:running start_date:2026-03-18 15:16:27.005332+00:00
+[2026-03-18T16:16:27.129+0100] {logging_mixin.py:190} INFO - Dag name:ipo_pipeline_daily and current dag run status:running
+[2026-03-18T16:16:27.129+0100] {taskinstance.py:732} INFO - ::endgroup::
+[2026-03-18T16:16:27.131+0100] {subprocess.py:78} INFO - Tmp dir root location: /var/folders/rl/d1ygt19j75337nbnslvz22pm0000gn/T
+[2026-03-18T16:16:27.132+0100] {subprocess.py:88} INFO - Running command: ['/bin/bash', '-c', 'bash -lc \'\n        cd /Users/atanasivanov/ipo-intel/ipo-intel &&\n        source .venv/bin/activate &&\n        set -a &&\n        source .env &&\n        set +a &&\n        export PYTHONPATH="/Users/atanasivanov/ipo-intel/ipo-intel" &&\n        python -m src.ingest.run_ingestion\n        \'']
+[2026-03-18T16:16:27.138+0100] {subprocess.py:99} INFO - Output:
+[2026-03-18T16:17:20.984+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: DETX"}}}
+[2026-03-18T16:17:26.321+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: EOHC"}}}
+[2026-03-18T16:17:39.808+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: HQBB"}}}
+[2026-03-18T16:17:47.410+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: INNP"}}}
+[2026-03-18T16:17:57.683+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: MAVG"}}}
+[2026-03-18T16:18:01.930+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: MEON"}}}
+[2026-03-18T16:18:03.416+0100] {subprocess.py:106} INFO - HTTP Error 404: {"quoteSummary":{"result":null,"error":{"code":"Not Found","description":"Quote not found for symbol: MTVE"}}}
+[2026-03-18T16:18:55.265+0100] {subprocess.py:106} INFO - 📥 IPO incremental window: 2025-03-18 -> 2026-04-01 | events=200
+[2026-03-18T16:18:55.266+0100] {subprocess.py:106} INFO - 🏷️ Finnhub profiles: empty_payloads=10 so far (example symbol=BVXX)
+[2026-03-18T16:18:55.267+0100] {subprocess.py:106} INFO - 🏷️ Finnhub profiles: empty_payloads=20 so far (example symbol=DTDT)
+[2026-03-18T16:18:55.267+0100] {subprocess.py:106} INFO - 🏷️ Finnhub profiles: empty_payloads=29 so far (example symbol=HAMA)
+[2026-03-18T16:18:55.268+0100] {subprocess.py:106} INFO - 🏷️ Finnhub profiles done: upserted=1 | empty=29 | failed=0
+[2026-03-18T16:18:55.269+0100] {subprocess.py:106} INFO - 🏷️ Finnhub profiles upserted: 1 (attempted=30)
+[2026-03-18T16:18:55.269+0100] {subprocess.py:106} INFO - 🏷️ Yahoo profiles done: upserted=12 | empty=38 | timeouts=0 | failed=0
+[2026-03-18T16:18:55.270+0100] {subprocess.py:106} INFO - 🏷️ Yahoo profiles upserted: 12 (attempted=50)
+[2026-03-18T16:18:55.270+0100] {subprocess.py:106} INFO - 🧭 Alpha mapping: nothing new to resolve
+[2026-03-18T16:18:55.271+0100] {subprocess.py:106} INFO - 🧭 Yahoo mapping: nothing new to resolve
+[2026-03-18T16:18:55.271+0100] {subprocess.py:106} INFO - 📈 Prices progress: 10/40 | rows=9 | with_data=9 | no_data=1 | failed=0 | yahoo_used=10 | alpha_used=0
+[2026-03-18T16:18:55.272+0100] {subprocess.py:106} INFO - 📈 Prices progress: 20/40 | rows=17 | with_data=17 | no_data=3 | failed=0 | yahoo_used=20 | alpha_used=0
+[2026-03-18T16:18:55.273+0100] {subprocess.py:106} INFO - 📈 Prices progress: 30/40 | rows=27 | with_data=27 | no_data=3 | failed=0 | yahoo_used=30 | alpha_used=0
+[2026-03-18T16:18:55.273+0100] {subprocess.py:106} INFO - 📈 Prices progress: 40/40 | rows=31 | with_data=31 | no_data=9 | failed=0 | yahoo_used=40 | alpha_used=0
+[2026-03-18T16:18:55.274+0100] {subprocess.py:106} INFO - ✅ Ingestion ok: ipos=200, fh_profiles=1, yh_profiles=12, prices_tickers=40, rows=31, with_data=31, no_data=9, failed=0, yahoo_used=40, alpha_used=0
+[2026-03-18T16:18:55.388+0100] {subprocess.py:110} INFO - Command exited with return code 0
+[2026-03-18T16:18:55.406+0100] {taskinstance.py:341} INFO - ::group::Post task execution logs
+[2026-03-18T16:18:55.407+0100] {taskinstance.py:353} INFO - Marking task as SUCCESS. dag_id=ipo_pipeline_daily, task_id=ingest_full, run_id=manual__2026-03-18T15:16:23.952036+00:00, execution_date=20260318T151623, start_date=20260318T151627, end_date=20260318T151855
+[2026-03-18T16:18:55.419+0100] {logging_mixin.py:190} INFO - Task instance in success state
+[2026-03-18T16:18:55.420+0100] {logging_mixin.py:190} INFO -  Previous state of the Task instance: running
+[2026-03-18T16:18:55.421+0100] {logging_mixin.py:190} INFO - Dag name:ipo_pipeline_daily queued_at:2026-03-18 15:16:23.982449+00:00
+[2026-03-18T16:18:55.421+0100] {logging_mixin.py:190} INFO - Task hostname:atanass-macbook-pro.local operator:BashOperator
+[2026-03-18T16:18:55.458+0100] {local_task_job_runner.py:266} INFO - Task exited with return code 0
+[2026-03-18T16:18:55.479+0100] {taskinstance.py:3901} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-03-18T16:18:55.481+0100] {local_task_job_runner.py:245} INFO - ::endgroup::
