@@ -22,3 +22,27 @@ dbt/logs/
 .DS_Store
 EOF
 dbt/.user.yml
+
+# Airflow runtime artifacts
+airflow/airflow.db
+airflow/airflow-webserver.pid
+airflow/logs/
+airflow/__pycache__/
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store
+
+# Environments
+.venv/
+.venv_airflow/
+
+# Secrets
+.env
+
+# dbt artifacts
+dbt/target/
+dbt/dbt_packages/
+
+airflow/airflow.cfg
